@@ -355,10 +355,11 @@ public class TeacherAttendanceController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<TeacherAttendanceDto>>> GetAttendance([FromQuery] DateTime? date)
     {
-        var targetDate = (date ?? DateTime.UtcNow).Date;
+        var targetDate = DateTime.SpecifyKind((date ?? DateTime.UtcNow).Date, DateTimeKind.Utc);
+        var nextDate = targetDate.AddDays(1);
 
         var records = await _db.TeacherAttendances
-            .Where(a => a.Date.Date == targetDate)
+            .Where(a => a.Date >= targetDate && a.Date < nextDate)
             .Include(a => a.Teacher).ThenInclude(t => t.User)
             .Select(a => new TeacherAttendanceDto
             {
@@ -378,9 +379,10 @@ public class TeacherAttendanceController : ControllerBase
     [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<IActionResult> Mark([FromBody] MarkTeacherAttendanceRequest request)
     {
-        var targetDate = request.Date.Date;
+        var targetDate = DateTime.SpecifyKind(request.Date.Date, DateTimeKind.Utc);
+        var nextDate = targetDate.AddDays(1);
         var existing = await _db.TeacherAttendances
-            .FirstOrDefaultAsync(a => a.TeacherId == request.TeacherId && a.Date.Date == targetDate);
+            .FirstOrDefaultAsync(a => a.TeacherId == request.TeacherId && a.Date >= targetDate && a.Date < nextDate);
 
         if (existing != null)
         {

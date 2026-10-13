@@ -229,8 +229,15 @@ public class DashboardController : ControllerBase
         var totalTeachers = await _db.Teachers.CountAsync(t => t.Status == TeacherStatus.Active);
         var totalClasses = await _db.Classes.CountAsync();
 
-        var today = DateTime.UtcNow.Date;
-        var todayAttendances = await _db.Attendances.Where(a => a.Date.Date == today).ToListAsync();
+        var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+        var tomorrow = today.AddDays(1);
+        var thirtyDaysAgo = today.AddDays(-29);
+
+        var last30DaysAttendances = await _db.Attendances
+            .Where(a => a.Date >= thirtyDaysAgo && a.Date < tomorrow)
+            .ToListAsync();
+
+        var todayAttendances = last30DaysAttendances.Where(a => a.Date >= today && a.Date < tomorrow).ToList();
         var todayPct = todayAttendances.Count > 0
             ? Math.Round((decimal)todayAttendances.Count(a => a.Status == AttendanceStatus.Present || a.Status == AttendanceStatus.Late) / todayAttendances.Count * 100, 1)
             : 92.4m;
@@ -243,12 +250,13 @@ public class DashboardController : ControllerBase
         var attendanceTrend = new List<ChartDataPoint>();
         for (int i = 29; i >= 0; i--)
         {
-            var d = today.AddDays(-i);
-            var dayAtt = await _db.Attendances.Where(a => a.Date.Date == d).ToListAsync();
+            var dStart = today.AddDays(-i);
+            var dEnd = dStart.AddDays(1);
+            var dayAtt = last30DaysAttendances.Where(a => a.Date >= dStart && a.Date < dEnd).ToList();
             var dayPct = dayAtt.Count > 0
                 ? Math.Round((decimal)dayAtt.Count(a => a.Status == AttendanceStatus.Present || a.Status == AttendanceStatus.Late) / dayAtt.Count * 100, 1)
                 : 90m + (i % 8);
-            attendanceTrend.Add(new ChartDataPoint(d.ToString("dd MMM"), dayPct));
+            attendanceTrend.Add(new ChartDataPoint(dStart.ToString("dd MMM"), dayPct));
         }
 
         // Monthly fee collection trend (last 6 months)

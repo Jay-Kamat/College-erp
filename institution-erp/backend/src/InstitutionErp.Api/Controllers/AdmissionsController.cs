@@ -295,7 +295,7 @@ public class AdmissionsController : ControllerBase
         admission.ReviewedAt = DateTime.UtcNow;
         admission.ReviewedBy = _currentUserService.Email ?? "Admin";
 
-        admission.StatusHistory.Add(new AdmissionStatusHistory
+        _db.AdmissionStatusHistories.Add(new AdmissionStatusHistory
         {
             AdmissionId = admission.Id,
             FromStatus = oldStatus,

@@ -14,6 +14,8 @@ using InstitutionErp.Infrastructure;
 using InstitutionErp.Infrastructure.Persistence;
 using InstitutionErp.Infrastructure.Seeding;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Serilog Setup

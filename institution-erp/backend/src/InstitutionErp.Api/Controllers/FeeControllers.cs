@@ -334,11 +334,12 @@ public class FeesController : ControllerBase
     [Authorize(Roles = "SuperAdmin,Admin,Accountant")]
     public async Task<ActionResult<FeeCollectionSummaryDto>> GetCollectionSummary()
     {
-        var today = DateTime.UtcNow.Date;
+        var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+        var tomorrow = today.AddDays(1);
         var startOfMonth = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
         var todaySum = await _db.FeePayments
-            .Where(p => p.PaymentDate.Date == today)
+            .Where(p => p.PaymentDate >= today && p.PaymentDate < tomorrow)
             .SumAsync(p => (decimal?)p.Amount) ?? 0m;
 
         var monthSum = await _db.FeePayments

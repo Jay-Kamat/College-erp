@@ -35,8 +35,9 @@ public class AttendanceController : ControllerBase
     [Authorize(Roles = "SuperAdmin,Admin,Teacher")]
     public async Task<IActionResult> MarkAttendance([FromBody] BulkMarkAttendanceRequest request)
     {
-        var targetDate = request.Date.Date;
-        var today = DateTime.UtcNow.Date;
+        var targetDate = DateTime.SpecifyKind(request.Date.Date, DateTimeKind.Utc);
+        var nextDate = targetDate.AddDays(1);
+        var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
 
         var isAdmin = _currentUserService.IsInRole("SuperAdmin") || _currentUserService.IsInRole("Admin");
 
@@ -66,7 +67,7 @@ public class AttendanceController : ControllerBase
             .ToListAsync();
 
         var existingAttendances = await _db.Attendances
-            .Where(a => a.ClassRoomId == request.ClassRoomId && a.Date.Date == targetDate)
+            .Where(a => a.ClassRoomId == request.ClassRoomId && a.Date >= targetDate && a.Date < nextDate)
             .ToListAsync();
 
         var absentStudentsToNotify = new List<Student>();
