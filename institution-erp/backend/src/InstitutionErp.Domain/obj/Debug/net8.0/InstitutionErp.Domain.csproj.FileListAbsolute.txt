@@ -1,0 +1,11 @@
+d:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\bin\Debug\net8.0\InstitutionErp.Domain.deps.json
+d:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\bin\Debug\net8.0\InstitutionErp.Domain.dll
+d:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\bin\Debug\net8.0\InstitutionErp.Domain.pdb
+d:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\obj\Debug\net8.0\InstitutionErp.Domain.GeneratedMSBuildEditorConfig.editorconfig
+d:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\obj\Debug\net8.0\InstitutionErp.Domain.AssemblyInfoInputs.cache
+d:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\obj\Debug\net8.0\InstitutionErp.Domain.AssemblyInfo.cs
+d:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\obj\Debug\net8.0\InstitutionErp.Domain.csproj.CoreCompileInputs.cache
+d:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\obj\Debug\net8.0\InstitutionErp.Domain.dll
+d:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\obj\Debug\net8.0\refint\InstitutionErp.Domain.dll
+d:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\obj\Debug\net8.0\InstitutionErp.Domain.pdb
+d:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\obj\Debug\net8.0\ref\InstitutionErp.Domain.dll

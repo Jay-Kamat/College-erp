@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: institution_erp_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: institution_erp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d institution_erp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: institution_erp_backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=institution_erp;Username=postgres;Password=root"
+      Jwt__Secret: "SuperSecretKeyForInstitutionErpSystem2026!MustBeAtLeast32CharsLong"
+      Jwt__Issuer: "InstitutionErp"
+      Jwt__Audience: "InstitutionErpUsers"
+      Jwt__ExpiryMinutes: "60"
+      Jwt__RefreshTokenExpiryDays: "7"
+    ports:
+      - "5050:5050"
+    volumes:
+      - uploads_data:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: institution_erp_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  postgres_data:
+  uploads_data:
