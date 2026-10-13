@@ -1,6 +1,0 @@
-{
-  "InstitutionErp.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Api",
-  "InstitutionErp.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Application",
-  "InstitutionErp.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Domain",
-  "InstitutionErp.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Infrastructure"
-}
