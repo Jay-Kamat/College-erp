@@ -287,6 +287,41 @@ public class DashboardController : ControllerBase
             })
             .ToListAsync();
 
+        // Low attendance students (< 75%)
+        var activeStudents = await _db.Students
+            .Where(s => s.Status == StudentStatus.Active)
+            .Include(s => s.User)
+            .Include(s => s.ClassRoom)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var allAtt = await _db.Attendances.AsNoTracking().ToListAsync();
+        var lowAttendanceStudents = new List<StudentAttendanceSummaryDto>();
+
+        foreach (var s in activeStudents)
+        {
+            var sAtt = allAtt.Where(a => a.StudentId == s.Id).ToList();
+            if (sAtt.Count == 0) continue;
+            var present = sAtt.Count(a => a.Status == AttendanceStatus.Present || a.Status == AttendanceStatus.Late);
+            var pct = Math.Round((decimal)present / sAtt.Count * 100, 1);
+            if (pct < 75.0m)
+            {
+                lowAttendanceStudents.Add(new StudentAttendanceSummaryDto
+                {
+                    StudentId = s.Id,
+                    StudentName = s.User?.FullName ?? "Student",
+                    RollNumber = s.RollNumber,
+                    ClassName = s.ClassRoom?.FullName ?? "N/A",
+                    TotalDays = sAtt.Count,
+                    PresentDays = present,
+                    AbsentDays = sAtt.Count(a => a.Status == AttendanceStatus.Absent),
+                    LateDays = sAtt.Count(a => a.Status == AttendanceStatus.Late),
+                    LeaveDays = sAtt.Count(a => a.Status == AttendanceStatus.Leave),
+                    AttendancePercentage = pct
+                });
+            }
+        }
+
         return Ok(new AdminDashboardDto
         {
             TotalStudents = totalStudents,
@@ -298,7 +333,8 @@ public class DashboardController : ControllerBase
             AttendanceTrend30Days = attendanceTrend,
             MonthlyFeeCollectionTrend = feeTrend,
             ClassWiseStrength = classStrength,
-            RecentAdmissions = recentAdmissions
+            RecentAdmissions = recentAdmissions,
+            LowAttendanceStudents = lowAttendanceStudents.OrderBy(x => x.AttendancePercentage).Take(10).ToList()
         });
     }
 
@@ -306,10 +342,11 @@ public class DashboardController : ControllerBase
     [Authorize(Roles = "SuperAdmin,Accountant")]
     public async Task<ActionResult<AccountantDashboardDto>> GetAccountantDashboard()
     {
-        var today = DateTime.UtcNow.Date;
-        var startOfMonth = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var todayStart = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+        var todayEnd = todayStart.AddDays(1);
+        var startOfMonth = new DateTime(todayStart.Year, todayStart.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        var todaySum = await _db.FeePayments.Where(p => p.PaymentDate.Date == today).SumAsync(p => (decimal?)p.Amount) ?? 0m;
+        var todaySum = await _db.FeePayments.Where(p => p.PaymentDate >= todayStart && p.PaymentDate < todayEnd).SumAsync(p => (decimal?)p.Amount) ?? 0m;
         var monthSum = await _db.FeePayments.Where(p => p.PaymentDate >= startOfMonth).SumAsync(p => (decimal?)p.Amount) ?? 0m;
         var pendingSum = await _db.StudentFees.Where(sf => sf.Status != PaymentStatus.Paid).SumAsync(sf => (decimal?)(sf.BaseAmount - sf.DiscountAmount + sf.LateFeeAmount - sf.PaidAmount)) ?? 0m;
 
@@ -346,7 +383,7 @@ public class DashboardController : ControllerBase
         var feeTrend = new List<ChartDataPoint>();
         for (int i = 5; i >= 0; i--)
         {
-            var mDate = today.AddMonths(-i);
+            var mDate = todayStart.AddMonths(-i);
             var mStart = new DateTime(mDate.Year, mDate.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var mEnd = mStart.AddMonths(1);
             var sum = await _db.FeePayments.Where(p => p.PaymentDate >= mStart && p.PaymentDate < mEnd).SumAsync(p => (decimal?)p.Amount) ?? (40000m * (i + 1));
@@ -518,6 +555,34 @@ public class DashboardController : ControllerBase
             })
             .ToListAsync();
 
+        string? latestExamSummary = null;
+        var latestExam = await _db.Exams
+            .Where(e => e.ClassRoomId == student.ClassRoomId && e.IsPublished)
+            .Include(e => e.ExamSubjects)
+            .OrderByDescending(e => e.StartDate)
+            .FirstOrDefaultAsync();
+
+        if (latestExam != null && latestExam.ExamSubjects.Count > 0)
+        {
+            var examSubIds = latestExam.ExamSubjects.Select(es => es.Id).ToList();
+            var studentMarks = await _db.ExamMarks
+                .Where(m => examSubIds.Contains(m.ExamSubjectId) && m.StudentId == student.Id)
+                .ToListAsync();
+
+            decimal totalObtained = studentMarks.Where(m => !m.IsAbsent).Sum(m => m.MarksObtained);
+            decimal totalMax = latestExam.ExamSubjects.Sum(es => es.MaxMarks);
+
+            if (totalMax > 0 && studentMarks.Count > 0)
+            {
+                var pct = Math.Round((totalObtained / totalMax) * 100, 1);
+                var gradeScales = await _db.GradeScales.OrderByDescending(g => g.MinPercentage).ToListAsync();
+                var grade = gradeScales.FirstOrDefault(g => pct >= g.MinPercentage && pct <= g.MaxPercentage)?.GradeLetter ?? "B";
+                var status = pct >= 40 ? "Passed" : "Needs Improvement";
+                latestExamSummary = $"{latestExam.Name}: {status} with Grade {grade} ({pct}%)";
+            }
+        }
+        latestExamSummary ??= "Evaluations in progress for current term";
+
         return Ok(new ParentStudentDashboardDto
         {
             StudentId = student.Id,
@@ -526,7 +591,7 @@ public class DashboardController : ControllerBase
             ClassName = student.ClassRoom.FullName,
             AttendancePercentage = attPct,
             FeesDue = dues,
-            LatestExamResultSummary = "Mid-Term Examination: Passed with Grade A (84.6%)",
+            LatestExamResultSummary = latestExamSummary,
             RecentNotices = notices,
             Timetable = timetable
         });
@@ -550,7 +615,8 @@ public class AuditLogsController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 15,
         [FromQuery] string? action = null,
-        [FromQuery] string? entity = null)
+        [FromQuery] string? entity = null,
+        [FromQuery] string? search = null)
     {
         var query = _db.AuditLogs.AsNoTracking();
 
@@ -562,6 +628,15 @@ public class AuditLogsController : ControllerBase
         if (!string.IsNullOrWhiteSpace(entity))
         {
             query = query.Where(a => a.EntityName.ToLower() == entity.ToLower());
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.ToLower();
+            query = query.Where(a => (a.UserEmail != null && a.UserEmail.ToLower().Contains(s)) ||
+                                     a.Action.ToLower().Contains(s) ||
+                                     a.EntityName.ToLower().Contains(s) ||
+                                     (a.EntityId != null && a.EntityId.ToLower().Contains(s)));
         }
 
         var total = await query.CountAsync();

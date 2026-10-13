@@ -40,3 +40,7 @@ public record CreateUserRequest(
 );
 
 public record UpdateUserStatusRequest(bool IsActive);
+
+public record AdminResetPasswordRequest(string NewPassword);
+
+public record UpdateUserRolesRequest(List<string> Roles);

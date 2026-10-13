@@ -147,7 +147,8 @@ public class AttendanceController : ControllerBase
     [HttpGet("class/{classId}")]
     public async Task<ActionResult<ClassAttendanceSummaryDto>> GetClassAttendance(Guid classId, [FromQuery] DateTime? date)
     {
-        var targetDate = (date ?? DateTime.UtcNow).Date;
+        var targetDate = DateTime.SpecifyKind((date ?? DateTime.UtcNow).Date, DateTimeKind.Utc);
+        var nextDate = targetDate.AddDays(1);
 
         var classRoom = await _db.Classes.FindAsync(classId);
         if (classRoom == null) return NotFound("Class not found.");
@@ -159,7 +160,7 @@ public class AttendanceController : ControllerBase
             .ToListAsync();
 
         var attendances = await _db.Attendances
-            .Where(a => a.ClassRoomId == classId && a.Date.Date == targetDate)
+            .Where(a => a.ClassRoomId == classId && a.Date >= targetDate && a.Date < nextDate)
             .ToListAsync();
 
         var records = students.Select(s =>

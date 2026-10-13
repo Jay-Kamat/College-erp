@@ -29,7 +29,8 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<PagedResult<UserDto>>> GetUsers(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] string? search = null)
+        [FromQuery] string? search = null,
+        [FromQuery] string? role = null)
     {
         var query = _db.Users
             .Include(u => u.UserRoles)
@@ -42,6 +43,12 @@ public class UsersController : ControllerBase
             query = query.Where(u => u.FirstName.ToLower().Contains(s) ||
                                      u.LastName.ToLower().Contains(s) ||
                                      u.Email.ToLower().Contains(s));
+        }
+
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            var r = role.ToLower();
+            query = query.Where(u => u.UserRoles.Any(ur => ur.Role.Name.ToLower() == r));
         }
 
         var total = await query.CountAsync();
@@ -125,5 +132,54 @@ public class UsersController : ControllerBase
         await _auditLogService.LogAsync("UpdateUserStatus", "User", user.Id.ToString(), new { isActive = oldStatus }, new { isActive = user.IsActive });
 
         return Ok(new { message = $"User status updated to {(user.IsActive ? "Active" : "Inactive")}." });
+    }
+
+    [HttpPut("{id}/reset-password")]
+    public async Task<IActionResult> ResetPassword(Guid id, [FromBody] AdminResetPasswordRequest request)
+    {
+        var user = await _db.Users.FindAsync(id);
+        if (user == null) return NotFound();
+
+        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
+        {
+            return BadRequest(new { message = "Password must be at least 6 characters long." });
+        }
+
+        user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
+        await _db.SaveChangesAsync();
+
+        await _auditLogService.LogAsync("ResetUserPassword", "User", user.Id.ToString(), null, new { email = user.Email });
+
+        return Ok(new { message = "Password successfully reset." });
+    }
+
+    [HttpPut("{id}/roles")]
+    public async Task<IActionResult> UpdateRoles(Guid id, [FromBody] UpdateUserRolesRequest request)
+    {
+        var user = await _db.Users
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Id == id);
+        if (user == null) return NotFound();
+
+        var oldRoles = user.UserRoles.Select(ur => ur.Role.Name).ToList();
+
+        var allRoles = await _db.Roles.ToListAsync();
+        _db.UserRoles.RemoveRange(user.UserRoles);
+
+        foreach (var rName in request.Roles)
+        {
+            var r = allRoles.FirstOrDefault(role => role.Name.Equals(rName, StringComparison.OrdinalIgnoreCase));
+            if (r != null)
+            {
+                user.UserRoles.Add(new UserRole { RoleId = r.Id, UserId = user.Id });
+            }
+        }
+
+        await _db.SaveChangesAsync();
+
+        await _auditLogService.LogAsync("UpdateUserRoles", "User", user.Id.ToString(), new { roles = oldRoles }, new { roles = request.Roles });
+
+        return Ok(new { message = "User roles successfully updated.", roles = request.Roles });
     }
 }

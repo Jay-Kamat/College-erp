@@ -4,7 +4,8 @@ import { admissionsApi, academicApi } from '../../api/endpoints';
 import { Admission } from '../../types';
 import DataTable from '../../components/ui/DataTable';
 import Modal from '../../components/ui/Modal';
-import { CheckCircle2, XCircle, Clock, FileText, Search, Filter, Eye, Check, X } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, FileText, Search, Filter, Eye, Check, X, Download, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export const AdmissionsQueuePage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -125,13 +126,24 @@ export const AdmissionsQueuePage: React.FC = () => {
             Verify submitted admission applications, review credentials, and enroll approved candidates
           </p>
         </div>
-        <button
-          onClick={handleExportCsv}
-          disabled={isExporting}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
-        >
-          {isExporting ? 'Exporting...' : 'Export CSV'}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/admissions/apply"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+          >
+            <ExternalLink className="h-4 w-4 text-indigo-600" />
+            <span>Public Application Portal</span>
+          </Link>
+          <button
+            onClick={handleExportCsv}
+            disabled={isExporting}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50 transition"
+          >
+            {isExporting ? 'Exporting...' : 'Export CSV'}
+          </button>
+        </div>
       </div>
 
       {actionSuccess && (
@@ -247,6 +259,40 @@ export const AdmissionsQueuePage: React.FC = () => {
                   <p className="font-medium text-slate-800">{selectedAdmission.guardianEmail}</p>
                 </div>
               </div>
+            </div>
+
+            {/* Uploaded Supporting Documents */}
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3">
+              <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Supporting Documents ({selectedAdmission.documents?.length || 0})
+              </h4>
+              {selectedAdmission.documents && selectedAdmission.documents.length > 0 ? (
+                <div className="mt-2 space-y-1.5">
+                  {selectedAdmission.documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between rounded bg-slate-50 dark:bg-slate-800 p-2 text-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-indigo-600" />
+                        <span className="font-medium text-slate-700 dark:text-slate-200">{doc.fileName}</span>
+                        <span className="text-[10px] text-slate-400">({doc.documentType})</span>
+                      </div>
+                      <a
+                        href={`http://localhost:5050${doc.downloadUrl}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-semibold text-indigo-600 hover:underline"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Download
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-1 text-xs text-slate-400">No documents uploaded for this applicant.</p>
+              )}
             </div>
 
             {/* Review Remarks */}

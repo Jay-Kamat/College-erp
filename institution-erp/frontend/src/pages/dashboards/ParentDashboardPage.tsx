@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { dashboardApi, parentsApi, feesApi, examsApi } from '../../api/endpoints';
+import { dashboardApi, parentsApi, feesApi, examsApi, studentsApi } from '../../api/endpoints';
 import StatCard from '../../components/ui/StatCard';
 import { GraduationCap, CalendarCheck, DollarSign, Bell, Award, BookOpen, Clock, Download, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../store/authContext';
+import { Link } from 'react-router-dom';
 
 export const ParentDashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -21,7 +22,7 @@ export const ParentDashboardPage: React.FC = () => {
 
   const { data: allStudents } = useQuery({
     queryKey: ['all-students-portal-preview'],
-    queryFn: () => dashboardApi.getParent().then(() => studentsApi.getList({ pageSize: 50 })),
+    queryFn: () => studentsApi.getList({ pageSize: 50 }),
     enabled: isSuperAdmin,
   });
 
@@ -98,7 +99,7 @@ export const ParentDashboardPage: React.FC = () => {
               onChange={(e) => setSelectedStudentId(e.target.value)}
               className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm focus:border-indigo-500 focus:outline-none"
             >
-              {allStudents.items.map((s) => (
+              {allStudents.items.map((s: any) => (
                 <option key={s.id} value={s.id}>
                   {s.fullName} ({s.className}) - Roll: {s.rollNumber}
                 </option>
@@ -126,24 +127,62 @@ export const ParentDashboardPage: React.FC = () => {
           value={`$${data.feesDue.toLocaleString()}`}
           icon={DollarSign}
           color={data.feesDue > 0 ? 'rose' : 'emerald'}
-          description={data.feesDue > 0 ? 'Payment required' : 'All clear for current term'}
+          trend={{ value: 'View Details', isPositive: data.feesDue === 0 }}
+          description={data.feesDue > 0 ? 'Payment pending for current term' : 'All clear for current term'}
         />
         <StatCard
           title="Academic Performance"
-          value="Grade A"
+          value={data.latestExamResultSummary?.includes('Grade') ? data.latestExamResultSummary.split('Grade')[1].trim().split(' ')[0] : 'Evaluated'}
           icon={Award}
           color="indigo"
           description={data.latestExamResultSummary || 'Regular evaluation in progress'}
         />
       </div>
 
+      {/* Quick Action Navigation Bar */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          to="/exams/results"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition"
+        >
+          <Award className="h-3.5 w-3.5 text-indigo-600" />
+          <span>Full Report Cards & Marks</span>
+        </Link>
+        <Link
+          to="/fees"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition"
+        >
+          <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
+          <span>Fee Ledger & Receipts</span>
+        </Link>
+        <Link
+          to="/timetable"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition"
+        >
+          <Clock className="h-3.5 w-3.5 text-amber-600" />
+          <span>Weekly Timetable Grid</span>
+        </Link>
+        <Link
+          to="/notices"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition"
+        >
+          <Bell className="h-3.5 w-3.5 text-indigo-600" />
+          <span>School Announcements</span>
+        </Link>
+      </div>
+
       {/* Main Grid: Weekly Schedule & Notices */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Weekly Timetable Schedule */}
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
-          <div className="mb-4">
-            <h2 className="text-base font-semibold text-slate-900">Class Timetable & Faculty</h2>
-            <p className="text-xs text-slate-500">Daily subject periods and teacher assignments</p>
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Class Timetable & Faculty</h2>
+              <p className="text-xs text-slate-500">Daily subject periods and teacher assignments</p>
+            </div>
+            <Link to="/timetable" className="text-xs font-semibold text-indigo-600 hover:underline">
+              Full Schedule &rarr;
+            </Link>
           </div>
 
           <div className="overflow-x-auto">

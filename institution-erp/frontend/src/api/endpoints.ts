@@ -175,11 +175,15 @@ export const notificationsApi = {
 };
 
 export const adminApi = {
-  getUsers: (params: { page?: number; pageSize?: number; search?: string }) =>
+  getUsers: (params: { page?: number; pageSize?: number; search?: string; role?: string }) =>
     apiClient.get<T.PagedResult<T.User>>('/users', { params }).then(r => r.data),
   createUser: (data: any) => apiClient.post<T.User>('/users', data).then(r => r.data),
   updateUserStatus: (id: string, isActive: boolean) =>
     apiClient.put(`/users/${id}/status`, { isActive }).then(r => r.data),
-  getAuditLogs: (params: { page?: number; pageSize?: number; action?: string; entity?: string }) =>
+  updateUserRoles: (id: string, roles: string[]) =>
+    apiClient.put(`/users/${id}/roles`, { roles }).then(r => r.data),
+  resetUserPassword: (id: string, newPassword: string) =>
+    apiClient.put(`/users/${id}/reset-password`, { newPassword }).then(r => r.data),
+  getAuditLogs: (params: { page?: number; pageSize?: number; action?: string; entity?: string; search?: string }) =>
     apiClient.get<T.PagedResult<T.AuditLog>>('/audit-logs', { params }).then(r => r.data),
 };
