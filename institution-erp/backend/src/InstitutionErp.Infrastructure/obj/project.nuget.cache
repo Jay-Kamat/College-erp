@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "s512aQHeZ5g=",
+  "dgSpecHash": "U5NQRZezQsk=",
   "success": true,
-  "projectFilePath": "D:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Infrastructure\\InstitutionErp.Infrastructure.csproj",
+  "projectFilePath": "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Infrastructure\\InstitutionErp.Infrastructure.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\jayva\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\jayva\\.nuget\\packages\\bouncycastle.cryptography\\2.4.0\\bouncycastle.cryptography.2.4.0.nupkg.sha512",
@@ -74,9 +74,9 @@
       "code": "NU1902",
       "level": "Warning",
       "message": "Package 'MailKit' 4.7.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-9j88-vvj5-vhgr",
-      "projectPath": "D:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Infrastructure\\InstitutionErp.Infrastructure.csproj",
+      "projectPath": "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Infrastructure\\InstitutionErp.Infrastructure.csproj",
       "warningLevel": 1,
-      "filePath": "D:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Infrastructure\\InstitutionErp.Infrastructure.csproj",
+      "filePath": "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Infrastructure\\InstitutionErp.Infrastructure.csproj",
       "libraryId": "MailKit",
       "targetGraphs": [
         "net8.0"
@@ -86,9 +86,9 @@
       "code": "NU1902",
       "level": "Warning",
       "message": "Package 'MimeKit' 4.7.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-g7hc-96xr-gvvx",
-      "projectPath": "D:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Infrastructure\\InstitutionErp.Infrastructure.csproj",
+      "projectPath": "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Infrastructure\\InstitutionErp.Infrastructure.csproj",
       "warningLevel": 1,
-      "filePath": "D:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Infrastructure\\InstitutionErp.Infrastructure.csproj",
+      "filePath": "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Infrastructure\\InstitutionErp.Infrastructure.csproj",
       "libraryId": "MimeKit",
       "targetGraphs": [
         "net8.0"

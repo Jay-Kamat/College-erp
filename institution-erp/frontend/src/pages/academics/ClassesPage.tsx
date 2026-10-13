@@ -20,6 +20,11 @@ export const ClassesPage: React.FC = () => {
   // Assign subject state
   const [assignSubjectId, setAssignSubjectId] = useState('');
 
+  // Add subject form states
+  const [newSubName, setNewSubName] = useState('');
+  const [newSubCode, setNewSubCode] = useState('');
+  const [newSubDesc, setNewSubDesc] = useState('');
+
   // Fetch classes, years, subjects
   const { data: classes, isLoading } = useQuery({
     queryKey: ['classes-list'],
@@ -30,6 +35,12 @@ export const ClassesPage: React.FC = () => {
     queryKey: ['academic-years'],
     queryFn: academicApi.getYears,
   });
+
+  React.useEffect(() => {
+    if (years && years.length > 0 && !academicYearId) {
+      setAcademicYearId(years[0].id);
+    }
+  }, [years, academicYearId]);
 
   const { data: subjects } = useQuery({
     queryKey: ['subjects-list'],
@@ -52,6 +63,21 @@ export const ClassesPage: React.FC = () => {
     },
     onError: (err: any) => {
       alert(`Failed to create class: ${err.message}`);
+    },
+  });
+
+  const createSubjectMutation = useMutation({
+    mutationFn: (data: any) => academicApi.createSubject(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subjects-list'] });
+      setIsAddSubjectModalOpen(false);
+      setNewSubName('');
+      setNewSubCode('');
+      setNewSubDesc('');
+      alert('New subject added to curriculum catalog!');
+    },
+    onError: (err: any) => {
+      alert(`Failed to create subject: ${err.message}`);
     },
   });
 
@@ -78,13 +104,22 @@ export const ClassesPage: React.FC = () => {
             Define institutional classes, sections, seat capacities, and subject curricula
           </p>
         </div>
-        <button
-          onClick={() => setIsAddClassModalOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
-        >
-          <Plus className="h-4 w-4" />
-          Create Class
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsAddSubjectModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+          >
+            <BookOpen className="h-4 w-4 text-indigo-600" />
+            New Subject
+          </button>
+          <button
+            onClick={() => setIsAddClassModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
+          >
+            <Plus className="h-4 w-4" />
+            Create Class
+          </button>
+        </div>
       </div>
 
       {/* Grid of Classes */}
@@ -288,6 +323,75 @@ export const ClassesPage: React.FC = () => {
                   Add Subject
                 </button>
               </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Create Subject Modal */}
+      {isAddSubjectModalOpen && (
+        <Modal
+          isOpen={isAddSubjectModalOpen}
+          onClose={() => setIsAddSubjectModalOpen(false)}
+          title="Create New Subject"
+          size="md"
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700">Subject Name *</label>
+              <input
+                type="text"
+                required
+                value={newSubName}
+                onChange={(e) => setNewSubName(e.target.value)}
+                placeholder="e.g. Computer Science"
+                className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700">Subject Code *</label>
+              <input
+                type="text"
+                required
+                value={newSubCode}
+                onChange={(e) => setNewSubCode(e.target.value)}
+                placeholder="e.g. CS-101"
+                className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-xs uppercase focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700">Description (Optional)</label>
+              <textarea
+                value={newSubDesc}
+                onChange={(e) => setNewSubDesc(e.target.value)}
+                placeholder="Curriculum overview and syllabus notes"
+                rows={2}
+                className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
+              <button
+                type="button"
+                onClick={() => setIsAddSubjectModalOpen(false)}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!newSubName || !newSubCode || createSubjectMutation.isPending}
+                onClick={() =>
+                  createSubjectMutation.mutate({
+                    name: newSubName,
+                    code: newSubCode,
+                    description: newSubDesc || undefined,
+                  })
+                }
+                className="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {createSubjectMutation.isPending ? 'Creating...' : 'Save Subject'}
+              </button>
             </div>
           </div>
         </Modal>

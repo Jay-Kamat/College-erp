@@ -13,3 +13,4 @@ d:\CLG APP\institution-erp\backend\src\InstitutionErp.Application\obj\Debug\net8
 d:\CLG APP\institution-erp\backend\src\InstitutionErp.Application\obj\Debug\net8.0\refint\InstitutionErp.Application.dll
 d:\CLG APP\institution-erp\backend\src\InstitutionErp.Application\obj\Debug\net8.0\InstitutionErp.Application.pdb
 d:\CLG APP\institution-erp\backend\src\InstitutionErp.Application\obj\Debug\net8.0\ref\InstitutionErp.Application.dll
+D:\CLG APP\institution-erp\backend\src\InstitutionErp.Application\obj\Debug\net8.0\InstitutionErp.Application.sourcelink.json

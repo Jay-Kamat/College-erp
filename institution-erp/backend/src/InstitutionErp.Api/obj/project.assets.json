@@ -4453,11 +4453,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Api\\InstitutionErp.Api.csproj",
+      "projectUniqueName": "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Api\\InstitutionErp.Api.csproj",
       "projectName": "InstitutionErp.Api",
-      "projectPath": "D:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Api\\InstitutionErp.Api.csproj",
+      "projectPath": "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Api\\InstitutionErp.Api.csproj",
       "packagesPath": "C:\\Users\\jayva\\.nuget\\packages\\",
-      "outputPath": "D:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Api\\obj\\",
+      "outputPath": "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Api\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\jayva\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -4473,11 +4473,11 @@
           "framework": "net8.0",
           "targetAlias": "net8.0",
           "projectReferences": {
-            "D:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Application\\InstitutionErp.Application.csproj": {
-              "projectPath": "D:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Application\\InstitutionErp.Application.csproj"
+            "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Application\\InstitutionErp.Application.csproj": {
+              "projectPath": "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Application\\InstitutionErp.Application.csproj"
             },
-            "D:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Infrastructure\\InstitutionErp.Infrastructure.csproj": {
-              "projectPath": "D:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Infrastructure\\InstitutionErp.Infrastructure.csproj"
+            "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Infrastructure\\InstitutionErp.Infrastructure.csproj": {
+              "projectPath": "d:\\CLG APP\\institution-erp\\backend\\src\\InstitutionErp.Infrastructure\\InstitutionErp.Infrastructure.csproj"
             }
           }
         }

@@ -31,6 +31,16 @@ export const admissionsApi = {
     apiClient.post(`/admissions/${id}/documents`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data),
   updateStatus: (id: string, data: { newStatus: string; remarks?: string }) =>
     apiClient.put(`/admissions/${id}/status`, data).then(r => r.data),
+  exportCsv: async (status?: string, classId?: string) => {
+    const res = await apiClient.get('/admissions/export', { params: { status, classId }, responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `admissions_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  },
 };
 
 export const studentsApi = {

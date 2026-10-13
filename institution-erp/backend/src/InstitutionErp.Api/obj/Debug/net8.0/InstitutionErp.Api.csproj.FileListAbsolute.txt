@@ -163,3 +163,4 @@ d:\CLG APP\institution-erp\backend\src\InstitutionErp.Api\obj\Debug\net8.0\refin
 d:\CLG APP\institution-erp\backend\src\InstitutionErp.Api\obj\Debug\net8.0\InstitutionErp.Api.pdb
 d:\CLG APP\institution-erp\backend\src\InstitutionErp.Api\obj\Debug\net8.0\InstitutionErp.Api.genruntimeconfig.cache
 d:\CLG APP\institution-erp\backend\src\InstitutionErp.Api\obj\Debug\net8.0\ref\InstitutionErp.Api.dll
+D:\CLG APP\institution-erp\backend\src\InstitutionErp.Api\obj\Debug\net8.0\InstitutionErp.Api.sourcelink.json

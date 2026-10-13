@@ -8,7 +8,13 @@
     margin: 0;
     padding: 0;
   }
-  
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+  select,
+  textarea {
+    @apply bg-white text-slate-900 border-slate-300 placeholder:text-slate-400 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500;
+  }
+
   #root {
     min-height: 100vh;
     display: flex;

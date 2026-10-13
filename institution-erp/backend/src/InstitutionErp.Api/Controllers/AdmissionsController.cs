@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -252,6 +253,30 @@ public class AdmissionsController : ControllerBase
 
         var stream = await _fileStorage.GetFileStreamAsync(doc.FilePath);
         return File(stream, doc.ContentType, doc.FileName);
+    }
+
+    [HttpGet("export")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<IActionResult> ExportToCsv([FromQuery] AdmissionStatus? status, [FromQuery] Guid? classId)
+    {
+        var query = _db.Admissions
+            .Include(a => a.DesiredClassRoom)
+            .AsNoTracking();
+
+        if (status.HasValue) query = query.Where(a => a.Status == status.Value);
+        if (classId.HasValue) query = query.Where(a => a.DesiredClassRoomId == classId.Value);
+
+        var list = await query.ToListAsync();
+        var sb = new StringBuilder();
+        sb.AppendLine("ReferenceNumber,FirstName,LastName,Email,Phone,AppliedClass,GuardianName,GuardianPhone,Status,SubmissionDate");
+
+        foreach (var a in list)
+        {
+            sb.AppendLine($"\"{a.ReferenceNumber}\",\"{a.FirstName}\",\"{a.LastName}\",\"{a.Email}\",\"{a.PhoneNumber}\",\"{a.DesiredClassRoom?.FullName}\",\"{a.GuardianName}\",\"{a.GuardianPhone}\",\"{a.Status}\",\"{a.CreatedAt:yyyy-MM-dd}\"");
+        }
+
+        var bytes = Encoding.UTF8.GetBytes(sb.ToString());
+        return File(bytes, "text/csv", $"admissions_export_{DateTime.UtcNow:yyyyMMdd}.csv");
     }
 
     [HttpPut("{id}/status")]

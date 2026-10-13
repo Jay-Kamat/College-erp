@@ -30,6 +30,12 @@ export const FeeManagementPage: React.FC = () => {
     enabled: studentSearch.length >= 2,
   });
 
+  // Recent students for quick selection
+  const { data: recentStudents } = useQuery({
+    queryKey: ['recent-students-fee-picker'],
+    queryFn: () => studentsApi.getList({ pageSize: 5 }),
+  });
+
   // Fetch fees for selected student
   const { data: studentFees, isLoading: isFeesLoading, refetch: refetchStudentFees } = useQuery({
     queryKey: ['student-fees', selectedStudent?.id],
@@ -181,8 +187,30 @@ export const FeeManagementPage: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-xs text-slate-400">
-                Search and select a student above to inspect fee ledger.
+              <div className="space-y-3 pt-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Quick Select Student:</p>
+                <div className="flex flex-col gap-1.5">
+                  {recentStudents?.items && recentStudents.items.length > 0 ? (
+                    recentStudents.items.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setSelectedStudent(s)}
+                        className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/50 p-2.5 text-left text-xs transition-all hover:border-indigo-300 hover:bg-indigo-50/60"
+                      >
+                        <div>
+                          <p className="font-bold text-slate-800">{s.fullName}</p>
+                          <p className="text-[10px] text-slate-500 font-mono">Roll: {s.rollNumber} • {s.className}</p>
+                        </div>
+                        <span className="text-[10px] font-bold text-indigo-600">Inspect →</span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-xs text-slate-400">
+                      Search and select a student above to inspect fee ledger.
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

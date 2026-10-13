@@ -14,6 +14,18 @@ export const AdmissionsQueuePage: React.FC = () => {
   const [selectedAdmission, setSelectedAdmission] = useState<Admission | null>(null);
   const [remarks, setRemarks] = useState('');
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportCsv = async () => {
+    try {
+      setIsExporting(true);
+      await admissionsApi.exportCsv(statusFilter || undefined);
+    } catch (err) {
+      alert('Failed to export admissions CSV');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['admissions-list', page, search, statusFilter],
@@ -113,6 +125,13 @@ export const AdmissionsQueuePage: React.FC = () => {
             Verify submitted admission applications, review credentials, and enroll approved candidates
           </p>
         </div>
+        <button
+          onClick={handleExportCsv}
+          disabled={isExporting}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+        >
+          {isExporting ? 'Exporting...' : 'Export CSV'}
+        </button>
       </div>
 
       {actionSuccess && (

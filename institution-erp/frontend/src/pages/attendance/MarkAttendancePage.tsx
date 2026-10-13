@@ -19,14 +19,14 @@ export const MarkAttendancePage: React.FC = () => {
   // Fetch classes
   const { data: classes } = useQuery({
     queryKey: ['classes-list'],
-    queryFn: async () => {
-      const res = await academicApi.getClasses();
-      if (res.length > 0 && !selectedClassId) {
-        setSelectedClassId(res[0].id);
-      }
-      return res;
-    },
+    queryFn: academicApi.getClasses,
   });
+
+  useEffect(() => {
+    if (classes && classes.length > 0 && !selectedClassId) {
+      setSelectedClassId(classes[0].id);
+    }
+  }, [classes, selectedClassId]);
 
   // Fetch students for selected class
   const { data: studentsData, isLoading: isStudentsLoading } = useQuery({

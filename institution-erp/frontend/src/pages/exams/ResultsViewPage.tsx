@@ -17,6 +17,12 @@ export const ResultsViewPage: React.FC = () => {
     queryFn: () => examsApi.getList(),
   });
 
+  React.useEffect(() => {
+    if (exams && exams.length > 0 && !selectedExamId) {
+      setSelectedExamId(exams[0].id);
+    }
+  }, [exams, selectedExamId]);
+
   const activeExam = exams?.find((e) => e.id === selectedExamId);
 
   // Fetch students for active exam class

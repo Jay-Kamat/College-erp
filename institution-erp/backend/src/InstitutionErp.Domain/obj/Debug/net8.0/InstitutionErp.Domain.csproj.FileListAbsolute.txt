@@ -9,3 +9,4 @@ d:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\obj\Debug\net8.0\In
 d:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\obj\Debug\net8.0\refint\InstitutionErp.Domain.dll
 d:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\obj\Debug\net8.0\InstitutionErp.Domain.pdb
 d:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\obj\Debug\net8.0\ref\InstitutionErp.Domain.dll
+D:\CLG APP\institution-erp\backend\src\InstitutionErp.Domain\obj\Debug\net8.0\InstitutionErp.Domain.sourcelink.json

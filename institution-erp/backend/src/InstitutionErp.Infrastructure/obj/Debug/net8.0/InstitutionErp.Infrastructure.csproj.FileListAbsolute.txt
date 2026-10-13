@@ -17,3 +17,4 @@ d:\CLG APP\institution-erp\backend\src\InstitutionErp.Infrastructure\obj\Debug\n
 d:\CLG APP\institution-erp\backend\src\InstitutionErp.Infrastructure\obj\Debug\net8.0\InstitutionErp.Infrastructure.pdb
 d:\CLG APP\institution-erp\backend\src\InstitutionErp.Infrastructure\obj\Debug\net8.0\InstitutionErp.Infrastructure.genruntimeconfig.cache
 d:\CLG APP\institution-erp\backend\src\InstitutionErp.Infrastructure\obj\Debug\net8.0\ref\InstitutionErp.Infrastructure.dll
+D:\CLG APP\institution-erp\backend\src\InstitutionErp.Infrastructure\obj\Debug\net8.0\InstitutionErp.Infrastructure.sourcelink.json

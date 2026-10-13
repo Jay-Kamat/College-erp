@@ -25,14 +25,14 @@ export const TimetablePage: React.FC = () => {
   // Load classes, teachers, subjects
   const { data: classes } = useQuery({
     queryKey: ['classes-list'],
-    queryFn: async () => {
-      const res = await academicApi.getClasses();
-      if (res.length > 0 && !selectedClassId) {
-        setSelectedClassId(res[0].id);
-      }
-      return res;
-    },
+    queryFn: academicApi.getClasses,
   });
+
+  React.useEffect(() => {
+    if (classes && classes.length > 0 && !selectedClassId) {
+      setSelectedClassId(classes[0].id);
+    }
+  }, [classes, selectedClassId]);
 
   const { data: teachers } = useQuery({
     queryKey: ['teachers-list'],
@@ -74,8 +74,14 @@ export const TimetablePage: React.FC = () => {
   });
 
   // Find slot for day & period
-  const getSlot = (day: number, period: number) => {
-    return timetable?.find((t) => t.dayOfWeek === day && t.periodNumber === period);
+  const getSlot = (dayIdx: number, period: number) => {
+    return timetable?.find((t) => {
+      const dayMatches =
+        typeof t.dayOfWeek === 'number'
+          ? t.dayOfWeek === dayIdx
+          : String(t.dayOfWeek).toLowerCase() === DAYS[dayIdx]?.toLowerCase();
+      return dayMatches && t.periodNumber === period;
+    });
   };
 
   return (
