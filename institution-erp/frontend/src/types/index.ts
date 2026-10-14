@@ -247,6 +247,90 @@ export interface StudentExamResult {
   attendancePercentage: number;
 }
 
+export interface ExamMarkEntry {
+  studentId: string;
+  rollNumber: string;
+  studentName: string;
+  marksObtained: number;
+  maxMarks: number;
+  passMarks: number;
+  isAbsent: boolean;
+  remarks?: string;
+  hasSavedMark: boolean;
+  examSubjectId: string;
+  subjectName: string;
+  enteredBy?: string;
+}
+
+export interface ClassSubjectMark {
+  subjectId: string;
+  subjectName: string;
+  marksObtained: number;
+  maxMarks: number;
+  passMarks: number;
+  isAbsent: boolean;
+  isPassed: boolean;
+  gradeLetter: string;
+  remarks?: string;
+}
+
+export interface ClassStudentResult {
+  studentId: string;
+  studentName: string;
+  rollNumber: string;
+  subjectMarks: Record<string, ClassSubjectMark>;
+  totalMarksObtained: number;
+  totalMaxMarks: number;
+  percentage: number;
+  overallGrade: string;
+  isOverallPassed: boolean;
+  classRank: number;
+  attendancePercentage: number;
+}
+
+export interface SubjectSummary {
+  subjectId: string;
+  subjectName: string;
+  subjectCode: string;
+  maxMarks: number;
+  passMarks: number;
+  averageMarks: number;
+  highestMarks: number;
+  lowestMarks: number;
+  passPercentage: number;
+}
+
+export interface ClassExamAnalytics {
+  totalStudents: number;
+  evaluatedStudents: number;
+  passedStudents: number;
+  failedStudents: number;
+  passPercentage: number;
+  classAveragePercentage: number;
+  highestPercentage: number;
+  highestScorerName: string;
+  lowestPercentage: number;
+  gradeDistribution: Record<string, number>;
+  subjectSummaries: SubjectSummary[];
+}
+
+export interface ClassExamReport {
+  examId: string;
+  examName: string;
+  examType: string;
+  classRoomId: string;
+  className: string;
+  academicYearName: string;
+  startDate: string;
+  endDate: string;
+  isPublished: boolean;
+  isLocked: boolean;
+  publishedAt?: string;
+  subjects: ExamSubject[];
+  students: ClassStudentResult[];
+  analytics: ClassExamAnalytics;
+}
+
 export interface FeeHead {
   id: string;
   name: string;

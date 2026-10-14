@@ -111,12 +111,24 @@ export const examsApi = {
   getById: (id: string) => apiClient.get<T.Exam>(`/exams/${id}`).then(r => r.data),
   create: (data: any) => apiClient.post<T.Exam>('/exams', data).then(r => r.data),
   getMarks: (examId: string, subjectId: string) =>
-    apiClient.get<any[]>(`/exams/${examId}/marks/${subjectId}`).then(r => r.data),
+    apiClient.get<T.ExamMarkEntry[]>(`/exams/${examId}/marks/${subjectId}`).then(r => r.data),
   saveMarks: (examId: string, data: { examSubjectId: string; marks: { studentId: string; marksObtained: number; isAbsent: boolean; remarks?: string }[] }) =>
     apiClient.post(`/exams/${examId}/marks`, data).then(r => r.data),
   publish: (examId: string) => apiClient.post(`/exams/${examId}/publish`).then(r => r.data),
   getStudentResults: (studentId: string) =>
     apiClient.get<T.StudentExamResult[]>(`/results/student/${studentId}`).then(r => r.data),
+  getClassReport: (examId: string) =>
+    apiClient.get<T.ClassExamReport>(`/results/exam/${examId}/class-report`).then(r => r.data),
+  exportClassCsv: async (examId: string, examName: string, className: string) => {
+    const res = await apiClient.get(`/results/exam/${examId}/export-csv`, { responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Class_Marks_${examName.replace(/\s+/g, '_')}_${className.replace(/\s+/g, '_')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  },
   downloadReportCard: async (examId: string, studentId: string, studentName: string) => {
     const res = await apiClient.get(`/results/${examId}/report-card/${studentId}`, { responseType: 'blob' });
     const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));

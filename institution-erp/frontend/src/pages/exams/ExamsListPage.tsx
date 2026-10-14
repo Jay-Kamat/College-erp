@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { examsApi, academicApi } from '../../api/endpoints';
+import { useAuth } from '../../store/authContext';
 import { Exam } from '../../types';
 import Modal from '../../components/ui/Modal';
-import { Award, Plus, Calendar, CheckCircle2, Lock, ArrowRight, Eye, BookOpen } from 'lucide-react';
+import { Award, Plus, Calendar, CheckCircle2, Lock, ArrowRight, Eye, BookOpen, BarChart3 } from 'lucide-react';
 
 export const ExamsListPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole(['SuperAdmin', 'Admin']);
+  const isTeacher = hasRole('Teacher');
+
   const [selectedClassId, setSelectedClassId] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -47,24 +52,28 @@ export const ExamsListPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Examinations & Grading</h1>
           <p className="text-sm text-slate-500">
-            Define exam schedules, input faculty marks, publish results & generate QuestPDF report cards
+            {isAdmin
+              ? 'Schedule examinations, monitor faculty grading progress, and generate class-wide performance reports'
+              : 'View examination rosters and input student marks for your allocated subjects'}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             to="/exams/results"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition"
           >
-            <Award className="h-4 w-4 text-indigo-600" />
-            Report Cards Portal
+            <BarChart3 className="h-4 w-4 text-indigo-600" />
+            Class Reports & Analytics
           </Link>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
-          >
-            <Plus className="h-4 w-4" />
-            New Examination
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition"
+            >
+              <Plus className="h-4 w-4" />
+              New Examination
+            </button>
+          )}
         </div>
       </div>
 
@@ -131,12 +140,21 @@ export const ExamsListPage: React.FC = () => {
                   {ex.subjects?.map((s) => (
                     <div key={s.id} className="flex items-center justify-between py-1">
                       <span className="font-medium text-slate-800">{s.subjectName}</span>
-                      <Link
-                        to={`/exams/marks?examId=${ex.id}&subjectId=${s.subjectId}`}
-                        className="text-[11px] font-semibold text-indigo-600 hover:underline"
-                      >
-                        Enter Marks &rarr;
-                      </Link>
+                      {isTeacher && !isAdmin && !ex.isLocked ? (
+                        <Link
+                          to={`/exams/marks?examId=${ex.id}&subjectId=${s.subjectId}`}
+                          className="text-[11px] font-semibold text-indigo-600 hover:underline"
+                        >
+                          Enter Marks &rarr;
+                        </Link>
+                      ) : (
+                        <Link
+                          to={`/exams/marks?examId=${ex.id}&subjectId=${s.subjectId}`}
+                          className="text-[11px] font-semibold text-slate-500 hover:text-indigo-600 hover:underline"
+                        >
+                          View Marks &rarr;
+                        </Link>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -145,20 +163,20 @@ export const ExamsListPage: React.FC = () => {
               <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3">
                 <Link
                   to={`/exams/results?examId=${ex.id}`}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-indigo-600"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800"
                 >
-                  <Eye className="h-3.5 w-3.5" />
-                  View Results
+                  <BarChart3 className="h-3.5 w-3.5" />
+                  Class Report & Analytics
                 </Link>
 
-                {!ex.isPublished && (
+                {isAdmin && !ex.isPublished && (
                   <button
                     onClick={() => {
                       if (window.confirm(`Publish ${ex.name} results? This will lock marks and make report cards downloadable.`)) {
                         publishMutation.mutate(ex.id);
                       }
                     }}
-                    className="inline-flex items-center gap-1 rounded bg-indigo-600 px-3 py-1 text-xs font-semibold text-white hover:bg-indigo-700"
+                    className="inline-flex items-center gap-1 rounded bg-indigo-600 px-3 py-1 text-xs font-semibold text-white hover:bg-indigo-700 transition"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Publish Results
