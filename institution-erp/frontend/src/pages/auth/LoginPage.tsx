@@ -122,59 +122,32 @@ export const LoginPage: React.FC = () => {
               <span>Quick Demo Logins (Click to Autofill)</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-3 gap-2 text-xs">
               <button
                 type="button"
-                onClick={() => setDemoCredentials('superadmin@institution.edu')}
-                className="p-2 rounded-lg text-left border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                onClick={() => setDemoCredentials('principal@institution.edu')}
+                className="p-2.5 rounded-xl text-left border border-slate-200 dark:border-slate-700 hover:border-primary-500 hover:bg-primary-50/30 dark:hover:bg-slate-800 transition-all"
               >
-                <div className="font-semibold text-slate-800 dark:text-slate-200">SuperAdmin</div>
-                <div className="text-[10px] text-slate-400">Principal</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDemoCredentials('admin@institution.edu')}
-                className="p-2 rounded-lg text-left border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-              >
-                <div className="font-semibold text-slate-800 dark:text-slate-200">Admin</div>
-                <div className="text-[10px] text-slate-400">Admissions / Academic</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDemoCredentials('accountant@institution.edu')}
-                className="p-2 rounded-lg text-left border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-              >
-                <div className="font-semibold text-slate-800 dark:text-slate-200">Accountant</div>
-                <div className="text-[10px] text-slate-400">Fees & Collections</div>
+                <div className="font-semibold text-slate-800 dark:text-slate-200">Principal</div>
+                <div className="text-[10px] text-slate-400">Executive & Admin</div>
               </button>
 
               <button
                 type="button"
                 onClick={() => setDemoCredentials('teacher1@institution.edu')}
-                className="p-2 rounded-lg text-left border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                className="p-2.5 rounded-xl text-left border border-slate-200 dark:border-slate-700 hover:border-primary-500 hover:bg-primary-50/30 dark:hover:bg-slate-800 transition-all"
               >
                 <div className="font-semibold text-slate-800 dark:text-slate-200">Teacher</div>
-                <div className="text-[10px] text-slate-400">Attendance / Marks</div>
+                <div className="text-[10px] text-slate-400">Class & Marks</div>
               </button>
 
               <button
                 type="button"
                 onClick={() => setDemoCredentials('student1@institution.edu')}
-                className="p-2 rounded-lg text-left border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                className="p-2.5 rounded-xl text-left border border-slate-200 dark:border-slate-700 hover:border-primary-500 hover:bg-primary-50/30 dark:hover:bg-slate-800 transition-all"
               >
                 <div className="font-semibold text-slate-800 dark:text-slate-200">Student</div>
-                <div className="text-[10px] text-slate-400">Results / Fees</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDemoCredentials('parent1@family.com')}
-                className="p-2 rounded-lg text-left border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-              >
-                <div className="font-semibold text-slate-800 dark:text-slate-200">Parent</div>
-                <div className="text-[10px] text-slate-400">Child Portal Switcher</div>
+                <div className="text-[10px] text-slate-400">Academic Portal</div>
               </button>
             </div>
           </div>

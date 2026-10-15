@@ -116,7 +116,7 @@ public class ExamsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<ActionResult<ExamDto>> Create([FromBody] CreateExamRequest request)
     {
         var exam = new Exam
@@ -234,8 +234,8 @@ public class ExamsController : ControllerBase
             return BadRequest(new { message = "Marks entry is locked for this exam." });
         }
 
-        // ROLE RESTRICTION: Admin CANNOT enter marks. Only Teachers can enter marks!
-        if (_currentUserService.IsInRole("SuperAdmin") || _currentUserService.IsInRole("Admin"))
+        // ROLE RESTRICTION: Principal CANNOT enter marks. Only Teachers can enter marks!
+        if (_currentUserService.IsInRole("Principal"))
         {
             return StatusCode(403, new { message = "Administrators are not permitted to enter or modify marks. Score entry is strictly reserved for faculty teachers." });
         }
@@ -305,7 +305,7 @@ public class ExamsController : ControllerBase
     }
 
     [HttpPost("{id}/publish")]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<IActionResult> PublishExam(Guid id)
     {
         var exam = await _db.Exams.FindAsync(id);
@@ -348,15 +348,10 @@ public class ResultsController : ControllerBase
 
         if (student == null) return NotFound();
 
-        // RBAC check: Student/Parent can only view own results
+        // RBAC check: Student can only view own results
         if (_currentUserService.IsInRole("Student"))
         {
             if (student.UserId != _currentUserService.UserId) return Forbid();
-        }
-        else if (_currentUserService.IsInRole("Parent") && !_currentUserService.IsInRole("Admin") && !_currentUserService.IsInRole("SuperAdmin"))
-        {
-            var isLinked = await _db.StudentParents.AnyAsync(sp => sp.StudentId == studentId && sp.Parent.UserId == _currentUserService.UserId);
-            if (!isLinked) return Forbid();
         }
 
         var exams = await _db.Exams
@@ -500,7 +495,7 @@ public class ResultsController : ControllerBase
     }
 
     [HttpGet("exam/{examId}/class-report")]
-    [Authorize(Roles = "SuperAdmin,Admin,Teacher")]
+    [Authorize(Roles = "Principal,Teacher")]
     public async Task<ActionResult<ClassExamReportDto>> GetClassExamReport(Guid examId)
     {
         var exam = await _db.Exams
@@ -691,7 +686,7 @@ public class ResultsController : ControllerBase
     }
 
     [HttpGet("exam/{examId}/export-csv")]
-    [Authorize(Roles = "SuperAdmin,Admin,Teacher")]
+    [Authorize(Roles = "Principal,Teacher")]
     public async Task<IActionResult> ExportClassExamCsv(Guid examId)
     {
         var reportRes = await GetClassExamReport(examId);

@@ -29,8 +29,6 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<TimetableEntry> TimetableEntries => Set<TimetableEntry>();
     public DbSet<TeacherAttendance> TeacherAttendances => Set<TeacherAttendance>();
     public DbSet<Student> Students => Set<Student>();
-    public DbSet<Parent> Parents => Set<Parent>();
-    public DbSet<StudentParent> StudentParents => Set<StudentParent>();
     public DbSet<Admission> Admissions => Set<Admission>();
     public DbSet<AdmissionDocument> AdmissionDocuments => Set<AdmissionDocument>();
     public DbSet<AdmissionStatusHistory> AdmissionStatusHistories => Set<AdmissionStatusHistory>();
@@ -89,19 +87,6 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Student & Parent many-to-many
-        modelBuilder.Entity<StudentParent>(entity =>
-        {
-            entity.HasKey(sp => new { sp.StudentId, sp.ParentId });
-            entity.HasOne(sp => sp.Student)
-                .WithMany(s => s.StudentParents)
-                .HasForeignKey(sp => sp.StudentId)
-                .OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(sp => sp.Parent)
-                .WithMany(p => p.StudentParents)
-                .HasForeignKey(sp => sp.ParentId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
 
         // Attendance uniqueness: (StudentId, Date)
         modelBuilder.Entity<Attendance>(entity =>

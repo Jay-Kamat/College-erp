@@ -6,7 +6,7 @@ import DataTable from '../../components/ui/DataTable';
 import Modal from '../../components/ui/Modal';
 import { Shield, Plus, Search, CheckCircle, XCircle, Key, UserCheck, ShieldAlert, Filter, RefreshCw } from 'lucide-react';
 
-const ALL_ROLES = ['SuperAdmin', 'Admin', 'Accountant', 'Teacher', 'Parent', 'Student'];
+const ALL_ROLES = ['Principal', 'Teacher', 'Student'];
 
 export const UsersPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -28,7 +28,7 @@ export const UsersPage: React.FC = () => {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('Password@123');
-  const [role, setRole] = useState('Admin');
+  const [role, setRole] = useState('Teacher');
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['users-list', page, search, roleFilter],
@@ -127,12 +127,8 @@ export const UsersPage: React.FC = () => {
             <span
               key={r}
               className={`rounded px-2 py-0.5 text-[10px] font-bold ${
-                r === 'SuperAdmin'
+                r === 'Principal'
                   ? 'bg-purple-100 text-purple-800'
-                  : r === 'Admin'
-                  ? 'bg-indigo-100 text-indigo-800'
-                  : r === 'Accountant'
-                  ? 'bg-amber-100 text-amber-800'
                   : r === 'Teacher'
                   ? 'bg-blue-100 text-blue-800'
                   : r === 'Student'
@@ -315,10 +311,9 @@ export const UsersPage: React.FC = () => {
                 onChange={(e) => setRole(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-indigo-500 focus:outline-none"
               >
-                <option value="Admin">Admin</option>
-                <option value="Accountant">Accountant</option>
                 <option value="Teacher">Teacher</option>
-                <option value="SuperAdmin">SuperAdmin</option>
+                <option value="Student">Student</option>
+                <option value="Principal">Principal</option>
               </select>
             </div>
             <div>

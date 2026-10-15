@@ -27,11 +27,8 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { hasRole, user } = useAuth();
 
-  const isSuperAdmin = hasRole('SuperAdmin');
-  const isAdmin = isSuperAdmin || hasRole('Admin');
-  const isAccountant = isSuperAdmin || hasRole('Accountant');
+  const isPrincipal = hasRole('Principal');
   const isTeacher = hasRole('Teacher');
-  const isParent = hasRole('Parent');
   const isStudent = hasRole('Student');
 
   // Navigation Items
@@ -43,58 +40,58 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       show: true,
     },
     {
-      title: 'Parent / Student Portal',
+      title: 'Student Portal',
       path: '/portal',
       icon: HeartHandshake,
-      show: isParent || isStudent || isSuperAdmin,
+      show: isStudent || isPrincipal,
     },
     {
       title: 'Admissions Queue',
       path: '/admissions',
       icon: UserPlus,
-      show: isAdmin,
+      show: isPrincipal,
     },
     {
       title: 'Students Directory',
       path: '/students',
       icon: Users,
-      show: isAdmin || isTeacher,
+      show: isPrincipal || isTeacher,
     },
     {
       title: 'Teachers & Staff',
       path: '/teachers',
       icon: GraduationCap,
-      show: isAdmin,
+      show: isPrincipal,
     },
     {
       title: 'Classes & Subjects',
       path: '/classes',
       icon: BookOpen,
-      show: isAdmin || isTeacher,
+      show: isPrincipal || isTeacher,
     },
     {
       title: 'Timetable Grid',
       path: '/timetable',
       icon: Calendar,
-      show: isAdmin || isTeacher || isStudent,
+      show: isPrincipal || isTeacher || isStudent,
     },
     {
       title: 'Attendance',
       path: '/attendance',
       icon: CheckSquare,
-      show: isAdmin || isTeacher,
+      show: isPrincipal || isTeacher,
     },
     {
       title: 'Exams & Results',
       path: '/exams',
       icon: FileSpreadsheet,
-      show: isAdmin || isTeacher || isStudent || isParent,
+      show: isPrincipal || isTeacher || isStudent,
     },
     {
       title: 'Fee Management',
       path: '/fees',
       icon: Receipt,
-      show: isAccountant || isAdmin,
+      show: isPrincipal,
     },
     {
       title: 'Notices Board',
@@ -106,13 +103,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       title: 'Staff & Roles',
       path: '/admin/users',
       icon: ShieldCheck,
-      show: isSuperAdmin,
+      show: isPrincipal,
     },
     {
       title: 'System Audit Logs',
       path: '/admin/audit-logs',
       icon: History,
-      show: isSuperAdmin,
+      show: isPrincipal,
     },
   ];
 

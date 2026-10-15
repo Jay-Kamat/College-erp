@@ -2,12 +2,9 @@ namespace InstitutionErp.Domain.Enums;
 
 public enum UserRoleType
 {
-    SuperAdmin,
-    Admin,
-    Accountant,
+    Principal,
     Teacher,
-    Student,
-    Parent
+    Student
 }
 
 public enum Gender
@@ -85,12 +82,9 @@ public enum ExamType
 public enum NoticeAudience
 {
     All,
-    SuperAdmin,
-    Admin,
-    Accountant,
+    Principal,
     Teacher,
     Student,
-    Parent,
     SpecificClass
 }
 

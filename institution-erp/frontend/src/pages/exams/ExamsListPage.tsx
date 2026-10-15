@@ -10,7 +10,7 @@ import { Award, Plus, Calendar, CheckCircle2, Lock, ArrowRight, Eye, BookOpen, B
 export const ExamsListPage: React.FC = () => {
   const queryClient = useQueryClient();
   const { hasRole } = useAuth();
-  const isAdmin = hasRole(['SuperAdmin', 'Admin']);
+  const isAdmin = hasRole('Principal');
   const isTeacher = hasRole('Teacher');
 
   const [selectedClassId, setSelectedClassId] = useState('');

@@ -15,7 +15,6 @@ import { ApplyAdmissionPage, CheckAdmissionStatusPage } from '../pages/public/Ad
 
 // Dashboards
 import { AdminDashboardPage } from '../pages/dashboards/AdminDashboardPage';
-import { AccountantDashboardPage } from '../pages/dashboards/AccountantDashboardPage';
 import { TeacherDashboardPage } from '../pages/dashboards/TeacherDashboardPage';
 import { ParentDashboardPage } from '../pages/dashboards/ParentDashboardPage';
 
@@ -43,16 +42,13 @@ const RoleDashboardDispatcher: React.FC = () => {
     return <AdminDashboardPage />;
   }
 
-  if (user.roles.includes('SuperAdmin') || user.roles.includes('Admin')) {
+  if (user.roles.includes('Principal')) {
     return <AdminDashboardPage />;
-  }
-  if (user.roles.includes('Accountant')) {
-    return <AccountantDashboardPage />;
   }
   if (user.roles.includes('Teacher')) {
     return <TeacherDashboardPage />;
   }
-  if (user.roles.includes('Parent') || user.roles.includes('Student')) {
+  if (user.roles.includes('Student')) {
     return <ParentDashboardPage />;
   }
 

@@ -18,8 +18,6 @@ public interface IApplicationDbContext
     DbSet<TimetableEntry> TimetableEntries { get; }
     DbSet<TeacherAttendance> TeacherAttendances { get; }
     DbSet<Student> Students { get; }
-    DbSet<Parent> Parents { get; }
-    DbSet<StudentParent> StudentParents { get; }
     DbSet<Admission> Admissions { get; }
     DbSet<AdmissionDocument> AdmissionDocuments { get; }
     DbSet<AdmissionStatusHistory> AdmissionStatusHistories { get; }

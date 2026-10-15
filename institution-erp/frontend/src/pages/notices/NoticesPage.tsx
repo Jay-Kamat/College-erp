@@ -7,8 +7,8 @@ import { Bell, Pin, Plus, Trash2, Calendar, Users, Filter } from 'lucide-react';
 import { useAuth } from '../../store/authContext';
 
 export const NoticesPage: React.FC = () => {
-  const { user } = useAuth();
-  const isAdmin = user?.roles.includes('SuperAdmin') || user?.roles.includes('Admin');
+  const { user, hasRole } = useAuth();
+  const isPrincipal = hasRole('Principal');
   const queryClient = useQueryClient();
 
   const [audienceFilter, setAudienceFilter] = useState('');
@@ -64,7 +64,7 @@ export const NoticesPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {isAdmin && (
+          {isPrincipal && (
             <button
               onClick={() => setIsCreateModalOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
@@ -81,7 +81,7 @@ export const NoticesPage: React.FC = () => {
         <Filter className="h-4 w-4 text-slate-400" />
         <span className="text-xs font-semibold text-slate-600">Audience Filter:</span>
         <div className="flex gap-1.5">
-          {['', 'All', 'Teacher', 'Student', 'Parent'].map((aud) => (
+          {['', 'All', 'Principal', 'Teacher', 'Student'].map((aud) => (
             <button
               key={aud}
               onClick={() => setAudienceFilter(aud)}
@@ -123,7 +123,7 @@ export const NoticesPage: React.FC = () => {
                       Audience: {n.audience}
                     </span>
                   </div>
-                  {isAdmin && (
+                  {isPrincipal && (
                     <button
                       onClick={() => {
                         if (window.confirm('Delete this notice?')) {
@@ -142,7 +142,7 @@ export const NoticesPage: React.FC = () => {
               </div>
 
               <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] text-slate-400">
-                <span>Posted by: {n.postedBy || 'Admin'}</span>
+                <span>Posted by: {n.postedBy || 'Principal'}</span>
                 <span>{new Date(n.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
@@ -177,10 +177,10 @@ export const NoticesPage: React.FC = () => {
               onChange={(e) => setAudience(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-indigo-500 focus:outline-none"
             >
-              <option value="All">All Campus (Staff, Students & Parents)</option>
+              <option value="All">All Campus (Faculty & Students)</option>
+              <option value="Principal">Principal Executive</option>
               <option value="Teacher">Faculty Only</option>
               <option value="Student">Students Only</option>
-              <option value="Parent">Parents Only</option>
             </select>
           </div>
 

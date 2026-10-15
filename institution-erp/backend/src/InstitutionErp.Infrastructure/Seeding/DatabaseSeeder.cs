@@ -29,7 +29,7 @@ public class DatabaseSeeder
 
     public async Task SeedAsync()
     {
-        // 1. Roles
+        // 1. Roles - Only Principal, Teacher, Student
         var roleNames = Enum.GetNames<UserRoleType>();
         foreach (var roleName in roleNames)
         {
@@ -44,66 +44,68 @@ public class DatabaseSeeder
         }
         await _db.SaveChangesAsync();
 
+        // Clean up legacy tables & obsolete roles using safe cascading raw SQL
+        try
+        {
+            await _db.Database.ExecuteSqlRawAsync(@"
+                DROP TABLE IF EXISTS student_parents CASCADE;
+                DROP TABLE IF EXISTS parents CASCADE;
+                DELETE FROM user_roles WHERE role_id IN (SELECT id FROM roles WHERE name NOT IN ('Principal', 'Teacher', 'Student'));
+                DELETE FROM roles WHERE name NOT IN ('Principal', 'Teacher', 'Student');
+            ");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Legacy cleanup note: {Message}", ex.Message);
+        }
+
         var roles = await _db.Roles.ToDictionaryAsync(r => r.Name);
+        var principalRoleId = roles[UserRoleType.Principal.ToString()].Id;
 
-        // 2. SuperAdmin
-        var adminEmail = _config["Admin:Email"] ?? "superadmin@institution.edu";
-        var adminPassword = _config["Admin:Password"] ?? "Password@123";
+        // 2. Principal & Admin Accounts (Ensure principal@institution.edu and admin@institution.edu exist with Principal role and Password@123)
+        var principalPassword = _config["Admin:Password"] ?? "Password@123";
+        var adminEmails = new[] { "principal@institution.edu", "admin@institution.edu", "superadmin@institution.edu" };
 
-        var superAdmin = await _db.Users
-            .Include(u => u.UserRoles)
-            .FirstOrDefaultAsync(u => u.Email == adminEmail);
-
-        if (superAdmin == null)
+        foreach (var email in adminEmails)
         {
-            superAdmin = new User
-            {
-                Email = adminEmail,
-                FirstName = "Arthur",
-                LastName = "Pendleton",
-                PasswordHash = _passwordHasher.HashPassword(adminPassword),
-                PhoneNumber = "+1 555-0100",
-                IsActive = true
-            };
-            superAdmin.UserRoles.Add(new UserRole { RoleId = roles[UserRoleType.SuperAdmin.ToString()].Id });
-            _db.Users.Add(superAdmin);
-            await _db.SaveChangesAsync();
-            _logger.LogInformation("SuperAdmin account seeded: {Email}", adminEmail);
-        }
+            var user = await _db.Users
+                .IgnoreQueryFilters()
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Email == email);
 
-        // 3. Admin & Accountant
-        var adminUser = await _db.Users.FirstOrDefaultAsync(u => u.Email == "admin@institution.edu");
-        if (adminUser == null)
-        {
-            adminUser = new User
+            if (user == null)
             {
-                Email = "admin@institution.edu",
-                FirstName = "Sarah",
-                LastName = "Connor",
-                PasswordHash = _passwordHasher.HashPassword("Password@123"),
-                PhoneNumber = "+1 555-0101",
-                IsActive = true
-            };
-            adminUser.UserRoles.Add(new UserRole { RoleId = roles[UserRoleType.Admin.ToString()].Id });
-            _db.Users.Add(adminUser);
-        }
+                user = new User
+                {
+                    Email = email,
+                    FirstName = email.StartsWith("admin") ? "Administrator" : (email.StartsWith("superadmin") ? "Super" : "Arthur"),
+                    LastName = email.StartsWith("admin") ? "Executive" : (email.StartsWith("superadmin") ? "Admin" : "Pendleton"),
+                    PasswordHash = _passwordHasher.HashPassword(principalPassword),
+                    PhoneNumber = "+1 555-0100",
+                    IsActive = true,
+                    IsDeleted = false
+                };
+                user.UserRoles.Add(new UserRole { RoleId = principalRoleId });
+                _db.Users.Add(user);
+                await _db.SaveChangesAsync();
+                _logger.LogInformation("Executive admin account seeded: {Email}", email);
+            }
+            else
+            {
+                // Ensure active, un-deleted, password updated to Password@123, lockout reset, and assigned Principal role
+                user.IsDeleted = false;
+                user.PasswordHash = _passwordHasher.HashPassword(principalPassword);
+                user.IsActive = true;
+                user.AccessFailedCount = 0;
+                user.LockoutEnd = null;
 
-        var accountantUser = await _db.Users.FirstOrDefaultAsync(u => u.Email == "accountant@institution.edu");
-        if (accountantUser == null)
-        {
-            accountantUser = new User
-            {
-                Email = "accountant@institution.edu",
-                FirstName = "Michael",
-                LastName = "Scott",
-                PasswordHash = _passwordHasher.HashPassword("Password@123"),
-                PhoneNumber = "+1 555-0102",
-                IsActive = true
-            };
-            accountantUser.UserRoles.Add(new UserRole { RoleId = roles[UserRoleType.Accountant.ToString()].Id });
-            _db.Users.Add(accountantUser);
+                if (!user.UserRoles.Any(ur => ur.RoleId == principalRoleId))
+                {
+                    user.UserRoles.Add(new UserRole { RoleId = principalRoleId, UserId = user.Id });
+                }
+                await _db.SaveChangesAsync();
+            }
         }
-        await _db.SaveChangesAsync();
 
         // 4. Grade Scales
         if (!await _db.GradeScales.AnyAsync())
@@ -378,42 +380,14 @@ public class DatabaseSeeder
                     Address = $"{100 + i} Campus Avenue, Cityville",
                     ClassRoomId = targetClass.Id,
                     AdmissionDate = DateTime.UtcNow.AddMonths(-6),
-                    Status = StudentStatus.Active
+                    Status = StudentStatus.Active,
+                    GuardianName = $"Guardian {sLastName}",
+                    GuardianPhone = $"+1 555-20{i:D2}",
+                    GuardianEmail = $"guardian{i}@example.com",
+                    GuardianRelation = i % 2 == 0 ? "Mother" : "Father"
                 };
                 _db.Students.Add(student);
                 await _db.SaveChangesAsync();
-
-                // Create Parent
-                var pUser = new User
-                {
-                    Email = pEmail,
-                    FirstName = $"Guardian",
-                    LastName = sLastName,
-                    PasswordHash = _passwordHasher.HashPassword("Password@123"),
-                    PhoneNumber = $"+1 555-20{i:D2}",
-                    IsActive = true
-                };
-                pUser.UserRoles.Add(new UserRole { RoleId = roles[UserRoleType.Parent.ToString()].Id });
-                _db.Users.Add(pUser);
-                await _db.SaveChangesAsync();
-
-                var parent = new Parent
-                {
-                    UserId = pUser.Id,
-                    Occupation = "Professional",
-                    Address = $"{100 + i} Campus Avenue, Cityville",
-                    AlternatePhone = $"+1 555-30{i:D2}"
-                };
-                _db.Parents.Add(parent);
-                await _db.SaveChangesAsync();
-
-                _db.StudentParents.Add(new StudentParent
-                {
-                    StudentId = student.Id,
-                    ParentId = parent.Id,
-                    Relationship = i % 2 == 0 ? "Mother" : "Father",
-                    IsPrimaryContact = true
-                });
 
                 // Assign Fee installment
                 var sf = new StudentFee
@@ -437,7 +411,7 @@ public class DatabaseSeeder
                         Mode = PaymentMode.UPI,
                         TransactionReference = $"UPI-TXN-{Guid.NewGuid():N}".Substring(0, 16).ToUpper(),
                         PaymentDate = DateTime.UtcNow.AddDays(-i),
-                        ReceivedBy = "accountant@institution.edu"
+                        ReceivedBy = "principal@institution.edu"
                     };
                     _db.FeePayments.Add(payment);
                     await _db.SaveChangesAsync();
@@ -468,7 +442,7 @@ public class DatabaseSeeder
                 }
             }
             await _db.SaveChangesAsync();
-            _logger.LogInformation("60 students, parents, fees, and attendance seeded successfully.");
+            _logger.LogInformation("60 students, fees, and attendance seeded successfully.");
         }
 
         // 11. Mid Term Exam with Marks & Published Results
@@ -561,20 +535,20 @@ public class DatabaseSeeder
                 },
                 new Notice
                 {
-                    Title = "Parent-Teacher Conference Schedule",
-                    Content = "Parent-Teacher meeting for Grades 9 and 10 will be conducted this Saturday from 10:00 AM to 1:00 PM.",
-                    Audience = NoticeAudience.Parent,
+                    Title = "Faculty Coordination Meeting",
+                    Content = "Faculty coordination meeting for all departments will be conducted this Saturday from 10:00 AM to 1:00 PM.",
+                    Audience = NoticeAudience.Teacher,
                     IsPinned = false,
-                    PostedBy = "Academic Coordinator",
+                    PostedBy = "Principal Office",
                     CreatedAt = DateTime.UtcNow.AddDays(-3)
                 },
                 new Notice
                 {
                     Title = "Upcoming Term Fee Payment Deadline",
                     Content = "Kindly ensure fee installments are settled on or before the due date to avoid automated late fee charges.",
-                    Audience = NoticeAudience.Parent,
+                    Audience = NoticeAudience.Student,
                     IsPinned = false,
-                    PostedBy = "Accounts Dept",
+                    PostedBy = "Principal Office",
                     CreatedAt = DateTime.UtcNow.AddDays(-2)
                 }
             );

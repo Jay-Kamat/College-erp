@@ -34,17 +34,15 @@ public class NoticesController : ControllerBase
             .Where(n => n.ExpiryDate == null || n.ExpiryDate >= DateTime.UtcNow)
             .AsNoTracking();
 
-        var isAdmin = _currentUserService.IsInRole("SuperAdmin") || _currentUserService.IsInRole("Admin");
+        var isAdmin = _currentUserService.IsInRole("Principal");
 
         if (!isAdmin)
         {
             var isTeacher = _currentUserService.IsInRole("Teacher");
-            var isParent = _currentUserService.IsInRole("Parent");
             var isStudent = _currentUserService.IsInRole("Student");
 
             query = query.Where(n => n.Audience == NoticeAudience.All ||
                                      (isTeacher && n.Audience == NoticeAudience.Teacher) ||
-                                     (isParent && n.Audience == NoticeAudience.Parent) ||
                                      (isStudent && n.Audience == NoticeAudience.Student));
         }
 
@@ -71,7 +69,7 @@ public class NoticesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<ActionResult<NoticeDto>> Create([FromBody] CreateNoticeRequest request)
     {
         var notice = new Notice
@@ -104,7 +102,7 @@ public class NoticesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var notice = await _db.Notices.FindAsync(id);
@@ -222,7 +220,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("admin")]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<ActionResult<AdminDashboardDto>> GetAdminDashboard()
     {
         var totalStudents = await _db.Students.CountAsync(s => s.Status == StudentStatus.Active);
@@ -347,7 +345,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("accountant")]
-    [Authorize(Roles = "SuperAdmin,Accountant")]
+    [Authorize(Roles = "Principal")]
     public async Task<ActionResult<AccountantDashboardDto>> GetAccountantDashboard()
     {
         var todayStart = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
@@ -411,7 +409,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("teacher")]
-    [Authorize(Roles = "SuperAdmin,Admin,Teacher")]
+    [Authorize(Roles = "Principal,Teacher")]
     public async Task<ActionResult<TeacherDashboardDto>> GetTeacherDashboard()
     {
         var teacher = await _db.Teachers
@@ -484,9 +482,10 @@ public class DashboardController : ControllerBase
         });
     }
 
+    [HttpGet("student")]
     [HttpGet("parent")]
-    [Authorize(Roles = "SuperAdmin,Admin,Parent,Student")]
-    public async Task<ActionResult<ParentStudentDashboardDto>> GetParentDashboard([FromQuery] Guid? studentId)
+    [Authorize(Roles = "Principal,Student")]
+    public async Task<ActionResult<ParentStudentDashboardDto>> GetStudentDashboard([FromQuery] Guid? studentId)
     {
         Student? student = null;
 
@@ -504,19 +503,6 @@ public class DashboardController : ControllerBase
                 .Include(s => s.ClassRoom)
                 .FirstOrDefaultAsync(s => s.UserId == _currentUserService.UserId);
         }
-        else if (_currentUserService.IsInRole("Parent"))
-        {
-            var parent = await _db.Parents.FirstOrDefaultAsync(p => p.UserId == _currentUserService.UserId);
-            if (parent != null)
-            {
-                student = await _db.StudentParents
-                    .Where(sp => sp.ParentId == parent.Id)
-                    .Include(sp => sp.Student).ThenInclude(s => s.User)
-                    .Include(sp => sp.Student).ThenInclude(s => s.ClassRoom)
-                    .Select(sp => sp.Student)
-                    .FirstOrDefaultAsync();
-            }
-        }
 
         student ??= await _db.Students.Include(s => s.User).Include(s => s.ClassRoom).FirstOrDefaultAsync();
 
@@ -532,7 +518,7 @@ public class DashboardController : ControllerBase
             .SumAsync(sf => (decimal?)(sf.BaseAmount - sf.DiscountAmount + sf.LateFeeAmount - sf.PaidAmount)) ?? 0m;
 
         var notices = await _db.Notices
-            .Where(n => n.Audience == NoticeAudience.All || n.Audience == NoticeAudience.Parent || n.Audience == NoticeAudience.Student)
+            .Where(n => n.Audience == NoticeAudience.All || n.Audience == NoticeAudience.Student)
             .OrderByDescending(n => n.CreatedAt)
             .Take(4)
             .Select(n => new NoticeDto
@@ -608,7 +594,7 @@ public class DashboardController : ControllerBase
 
 [ApiController]
 [Route("api/v1/audit-logs")]
-[Authorize(Roles = "SuperAdmin")]
+[Authorize(Roles = "Principal")]
 public class AuditLogsController : ControllerBase
 {
     private readonly ApplicationDbContext _db;

@@ -66,37 +66,33 @@ docker-compose up --build -d
 
 | Role | Email | Features & Permissions |
 |---|---|---|
-| **SuperAdmin** | `superadmin@institution.edu` | Full system governance, audit trail, user & role provisioning |
-| **Admin** | `admin@institution.edu` | Operations, admissions approval, timetable, examinations |
-| **Accountant** | `accountant@institution.edu` | Fee collection, QuestPDF receipts, ledger, fee defaulters |
+| **Principal** | `principal@institution.edu` | Full institutional executive governance, operations, admissions, fees, timetable, staff & audit trail |
 | **Teacher** | `teacher1@institution.edu` | Daily lecture timetable, student attendance, grading & score entry |
-| **Parent** | `parent1@family.com` | Ward switcher, attendance record, fee payment history, notices |
-| **Student** | `student1@institution.edu` | Class timetable, term attendance percentage, report card download |
+| **Student** | `student1@institution.edu` | Academic portal, class timetable, term attendance percentage, report card download, fees & notices |
 
-> **Pro-Tip:** The login page features **One-Click Quick Login** buttons for instant testing of all 6 roles!
+> **Pro-Tip:** The login page features **One-Click Quick Login** buttons for instant testing of all 3 roles!
 
 ---
 
 ## ✨ Implemented Modules & Capabilities
 
 1. **Role-Based Executive Dashboards**
-   - **Admin**: Student/teacher counts, fee recovery rate, live turnout doughnut, 6-month collection bars, 30-day attendance health curve.
-   - **Accountant**: Day/month collections, outstanding balances, class dues chart, recent transaction ledger with instant PDF downloads.
+   - **Principal**: Student/teacher counts, fee recovery rate, live turnout doughnut, 6-month collection bars, 30-day attendance health curve, admissions review, fee ledger.
    - **Teacher**: Daily lecture timetable with room numbers, assigned cohorts, pending exam grading queue.
-   - **Parent / Student**: Ward switcher, term attendance percentage, fees due, weekly timetable, campus circulars.
+   - **Student**: Term attendance percentage, fees due, weekly timetable, exam results, campus circulars.
 2. **Online Admissions & Workflow Engine**
    - Public multi-step application form with document uploads.
    - Real-time application reference tracker (`ADM-YYYY-####`).
-   - Administrative review queue with **One-Click Approval** that automatically provisions:
+   - Principal review queue with **One-Click Approval** that automatically provisions:
      - Enrolled Student Profile + Roll Number
      - Student Portal User Account
-     - Parent Portal User Account + Family Link
+     - Emergency Guardian Contact Information
 3. **Classrooms & Interactive Timetable Matrix**
    - Classroom cohorts, seat capacity, section management.
    - Weekly 6-period visual timetable grid with automatic teacher clash prevention.
 4. **Daily Student & Faculty Attendance**
    - Instant "Mark All Present" one-click action with status toggles (Present, Absent, Late, Excused).
-   - Automated background notification dispatch to parents for absent students.
+   - Automated absence notification dispatch.
    - Low attendance watchlist (< 75% threshold).
 5. **Examinations, Scoring & QuestPDF Report Cards**
    - Exam scheduling and subject weightages.
@@ -109,5 +105,5 @@ docker-compose up --build -d
    - Official **QuestPDF Payment Receipts** generation (`REC-YYYY-####`).
    - Defaulters arrears ledger with CSV export.
 7. **Campus Noticeboard & Compliance Audit Trail**
-   - Circulars broadcasting with audience targeting (All, Staff, Students, Parents).
+   - Circulars broadcasting with audience targeting (All, Principal, Teacher, Student).
    - Immutable security and state audit trail with JSON payload inspection.

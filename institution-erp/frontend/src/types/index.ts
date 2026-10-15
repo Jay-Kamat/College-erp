@@ -1,4 +1,4 @@
-export type UserRole = 'SuperAdmin' | 'Admin' | 'Accountant' | 'Teacher' | 'Student' | 'Parent';
+export type UserRole = 'Principal' | 'Teacher' | 'Student';
 
 export interface User {
   id: string;
@@ -416,7 +416,7 @@ export interface Notice {
   id: string;
   title: string;
   content: string;
-  audience: 'All' | 'Teacher' | 'Student' | 'Parent' | 'SpecificClass';
+  audience: 'All' | 'Principal' | 'Teacher' | 'Student' | 'SpecificClass';
   targetClassRoomId?: string;
   targetClassName?: string;
   expiryDate?: string;

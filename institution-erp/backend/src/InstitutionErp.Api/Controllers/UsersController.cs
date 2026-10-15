@@ -11,7 +11,7 @@ namespace InstitutionErp.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
-[Authorize(Roles = "SuperAdmin")]
+[Authorize(Roles = "Principal")]
 public class UsersController : ControllerBase
 {
     private readonly ApplicationDbContext _db;

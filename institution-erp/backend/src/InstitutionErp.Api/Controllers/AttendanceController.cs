@@ -32,14 +32,14 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpPost("mark")]
-    [Authorize(Roles = "SuperAdmin,Admin,Teacher")]
+    [Authorize(Roles = "Principal,Teacher")]
     public async Task<IActionResult> MarkAttendance([FromBody] BulkMarkAttendanceRequest request)
     {
         var targetDate = DateTime.SpecifyKind(request.Date.Date, DateTimeKind.Utc);
         var nextDate = targetDate.AddDays(1);
         var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
 
-        var isAdmin = _currentUserService.IsInRole("SuperAdmin") || _currentUserService.IsInRole("Admin");
+        var isAdmin = _currentUserService.IsInRole("Principal");
 
         // Teacher can only edit the same day
         if (!isAdmin && targetDate != today)
@@ -63,7 +63,6 @@ public class AttendanceController : ControllerBase
         var classStudents = await _db.Students
             .Where(s => s.ClassRoomId == request.ClassRoomId && s.Status == StudentStatus.Active)
             .Include(s => s.User)
-            .Include(s => s.StudentParents).ThenInclude(sp => sp.Parent).ThenInclude(p => p.User)
             .ToListAsync();
 
         var existingAttendances = await _db.Attendances
@@ -112,31 +111,27 @@ public class AttendanceController : ControllerBase
 
         await _db.SaveChangesAsync();
 
-        // Automated notification to parents of absent students
+        // Automated notification to absent students
         foreach (var student in absentStudentsToNotify)
         {
-            foreach (var sp in student.StudentParents)
-            {
-                var parentUser = sp.Parent?.User;
-                if (parentUser != null)
-                {
-                    var msg = $"Your child {student.User?.FullName ?? "Student"} was marked ABSENT on {targetDate:dd MMM yyyy}.";
-                    await _notificationSender.SendNotificationAsync(
-                        parentUser.Id,
-                        "Student Absence Alert",
-                        msg,
-                        NotificationChannelType.InApp,
-                        "Attendance",
-                        student.Id.ToString()
-                    );
+            var msg = $"You were marked ABSENT on {targetDate:dd MMM yyyy}. Please submit an explanation or leave application if applicable.";
+            await _notificationSender.SendNotificationAsync(
+                student.UserId,
+                "Student Absence Alert",
+                msg,
+                NotificationChannelType.InApp,
+                "Attendance",
+                student.Id.ToString()
+            );
 
-                    await _notificationSender.QueueOutboxAsync(
-                        NotificationChannelType.Email,
-                        parentUser.Email,
-                        "Attendance Notice - Child Absent",
-                        $"<p>Dear {parentUser.FirstName},</p><p>{msg}</p><p>Please contact the school office if this was unintended.</p>"
-                    );
-                }
+            if (!string.IsNullOrEmpty(student.User?.Email))
+            {
+                await _notificationSender.QueueOutboxAsync(
+                    NotificationChannelType.Email,
+                    student.User.Email,
+                    "Attendance Notice - Absenteeism Alert",
+                    $"<p>Dear {student.User.FirstName},</p><p>{msg}</p><p>Please contact the principal or class teacher if this was unintended.</p>"
+                );
             }
         }
 

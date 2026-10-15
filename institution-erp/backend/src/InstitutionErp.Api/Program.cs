@@ -66,11 +66,14 @@ builder.Services.AddAuthentication(options =>
 // 5. Authorization Policies
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("RequireSuperAdmin", policy => policy.RequireRole("SuperAdmin"));
-    options.AddPolicy("RequireAdmin", policy => policy.RequireRole("SuperAdmin", "Admin"));
-    options.AddPolicy("RequireAccountant", policy => policy.RequireRole("SuperAdmin", "Accountant"));
-    options.AddPolicy("RequireTeacher", policy => policy.RequireRole("SuperAdmin", "Admin", "Teacher"));
-    options.AddPolicy("RequireParentOrStudent", policy => policy.RequireRole("SuperAdmin", "Admin", "Parent", "Student"));
+    options.AddPolicy("RequirePrincipal", policy => policy.RequireRole("Principal"));
+    options.AddPolicy("RequireTeacher", policy => policy.RequireRole("Principal", "Teacher"));
+    options.AddPolicy("RequireStudent", policy => policy.RequireRole("Principal", "Student"));
+    // Backward compatibility aliases
+    options.AddPolicy("RequireSuperAdmin", policy => policy.RequireRole("Principal"));
+    options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Principal"));
+    options.AddPolicy("RequireAccountant", policy => policy.RequireRole("Principal"));
+    options.AddPolicy("RequireParentOrStudent", policy => policy.RequireRole("Principal", "Student"));
 });
 
 // 6. CORS

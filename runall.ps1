@@ -125,14 +125,11 @@ Write-Host ""
 Write-Host "----------------------------------------------------------------" -ForegroundColor DarkGray
 Write-Host "  DEMO ACCOUNTS (Password: Password@123)" -ForegroundColor Yellow
 Write-Host "----------------------------------------------------------------" -ForegroundColor DarkGray
-Write-Host "  * SuperAdmin : superadmin@institution.edu" -ForegroundColor White
-Write-Host "  * Admin      : admin@institution.edu" -ForegroundColor White
-Write-Host "  * Accountant : accountant@institution.edu" -ForegroundColor White
+Write-Host "  * Principal  : principal@institution.edu" -ForegroundColor White
 Write-Host "  * Teacher    : teacher1@institution.edu" -ForegroundColor White
-Write-Host "  * Parent     : parent1@family.com" -ForegroundColor White
 Write-Host "  * Student    : student1@institution.edu" -ForegroundColor White
 Write-Host ""
-Write-Host "  Note: The login page has 1-Click Demo Login buttons for all roles!" -ForegroundColor Green
+Write-Host "  Note: The login page has 1-Click Demo Login buttons for all 3 roles!" -ForegroundColor Green
 Write-Host "----------------------------------------------------------------" -ForegroundColor DarkGray
 Write-Host ""
 

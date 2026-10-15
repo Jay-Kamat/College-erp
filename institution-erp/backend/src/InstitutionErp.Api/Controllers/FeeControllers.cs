@@ -62,7 +62,7 @@ public class FeeStructuresController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,Admin,Accountant")]
+    [Authorize(Roles = "Principal")]
     public async Task<ActionResult<FeeStructureDto>> Create([FromBody] CreateFeeStructureRequest request)
     {
         var total = request.Items.Sum(i => i.Amount);
@@ -126,7 +126,7 @@ public class FeeHeadsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,Admin,Accountant")]
+    [Authorize(Roles = "Principal")]
     public async Task<ActionResult<FeeHeadDto>> Create([FromBody] CreateFeeHeadRequest request)
     {
         var head = new FeeHead
@@ -173,16 +173,11 @@ public class FeesController : ControllerBase
     [HttpGet("student/{studentId}")]
     public async Task<ActionResult<List<StudentFeeDto>>> GetStudentFees(Guid studentId)
     {
-        // RBAC check: Student/Parent can only view own fees
+        // RBAC check: Student can only view own fees
         if (_currentUserService.IsInRole("Student"))
         {
             var isSelf = await _db.Students.AnyAsync(s => s.Id == studentId && s.UserId == _currentUserService.UserId);
             if (!isSelf) return Forbid();
-        }
-        else if (_currentUserService.IsInRole("Parent") && !_currentUserService.IsInRole("Admin") && !_currentUserService.IsInRole("SuperAdmin") && !_currentUserService.IsInRole("Accountant"))
-        {
-            var isLinked = await _db.StudentParents.AnyAsync(sp => sp.StudentId == studentId && sp.Parent.UserId == _currentUserService.UserId);
-            if (!isLinked) return Forbid();
         }
 
         var fees = await _db.StudentFees
@@ -231,7 +226,7 @@ public class FeesController : ControllerBase
     }
 
     [HttpPost("payments")]
-    [Authorize(Roles = "SuperAdmin,Admin,Accountant")]
+    [Authorize(Roles = "Principal")]
     public async Task<ActionResult<FeePaymentDto>> RecordPayment([FromBody] CollectPaymentRequest request)
     {
         var studentFee = await _db.StudentFees
@@ -263,7 +258,7 @@ public class FeesController : ControllerBase
             Mode = request.Mode,
             TransactionReference = request.TransactionReference,
             PaymentDate = DateTime.UtcNow,
-            ReceivedBy = _currentUserService.Email ?? "Accountant",
+            ReceivedBy = _currentUserService.Email ?? "Principal",
             Remarks = request.Remarks
         };
 
@@ -331,7 +326,7 @@ public class FeesController : ControllerBase
     }
 
     [HttpGet("reports/collection")]
-    [Authorize(Roles = "SuperAdmin,Admin,Accountant")]
+    [Authorize(Roles = "Principal")]
     public async Task<ActionResult<FeeCollectionSummaryDto>> GetCollectionSummary()
     {
         var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
@@ -366,7 +361,7 @@ public class FeesController : ControllerBase
     }
 
     [HttpGet("reports/defaulters")]
-    [Authorize(Roles = "SuperAdmin,Admin,Accountant")]
+    [Authorize(Roles = "Principal")]
     public async Task<ActionResult<List<FeeDefaulterDto>>> GetDefaulters([FromQuery] Guid? classId)
     {
         var now = DateTime.UtcNow;
@@ -374,21 +369,20 @@ public class FeesController : ControllerBase
             .Where(sf => sf.Status != PaymentStatus.Paid && sf.DueDate < now)
             .Include(sf => sf.Student).ThenInclude(s => s.User)
             .Include(sf => sf.Student).ThenInclude(s => s.ClassRoom)
-            .Include(sf => sf.Student).ThenInclude(s => s.StudentParents).ThenInclude(sp => sp.Parent).ThenInclude(p => p.User)
-            .AsNoTracking();
+            .AsQueryable();
 
-        if (classId.HasValue) query = query.Where(sf => sf.Student.ClassRoomId == classId.Value);
+        if (classId.HasValue)
+            query = query.Where(sf => sf.Student.ClassRoomId == classId.Value);
 
-        var overdueFees = await query.ToListAsync();
-
-        var grouped = overdueFees.GroupBy(sf => sf.StudentId).Select(g =>
+        var list = await query.ToListAsync();
+        var grouped = list.GroupBy(sf => sf.StudentId).Select(g =>
         {
             var first = g.First();
             var totalDue = g.Sum(x => x.BalanceAmount);
             var earliestDue = g.Min(x => x.DueDate);
-            var daysOverdue = (now - earliestDue).Days;
-
-            var guardian = first.Student.StudentParents.FirstOrDefault()?.Parent.User;
+            var daysOverdue = (int)(now - earliestDue).TotalDays;
+            var guardianName = first.Student.GuardianName ?? "N/A";
+            var guardianPhone = first.Student.GuardianPhone ?? "N/A";
 
             return new FeeDefaulterDto
             {
@@ -396,8 +390,8 @@ public class FeesController : ControllerBase
                 StudentName = first.Student.User.FullName,
                 RollNumber = first.Student.RollNumber,
                 ClassName = first.Student.ClassRoom.FullName,
-                GuardianName = guardian?.FullName ?? "N/A",
-                GuardianPhone = guardian?.PhoneNumber ?? "N/A",
+                GuardianName = guardianName,
+                GuardianPhone = guardianPhone,
                 TotalDue = totalDue,
                 EarliestDueDate = earliestDue,
                 DaysOverdue = daysOverdue
@@ -408,7 +402,7 @@ public class FeesController : ControllerBase
     }
 
     [HttpGet("reports/defaulters/export")]
-    [Authorize(Roles = "SuperAdmin,Admin,Accountant")]
+    [Authorize(Roles = "Principal")]
     public async Task<IActionResult> ExportDefaultersToCsv([FromQuery] Guid? classId)
     {
         var defaultersRes = await GetDefaulters(classId);

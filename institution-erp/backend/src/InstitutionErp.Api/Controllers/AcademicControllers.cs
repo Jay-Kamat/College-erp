@@ -41,7 +41,7 @@ public class AcademicYearsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<ActionResult<AcademicYearDto>> Create([FromBody] CreateAcademicYearRequest request)
     {
         if (request.IsActive)
@@ -136,7 +136,7 @@ public class ClassesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<ActionResult<ClassRoomDto>> Create([FromBody] CreateClassRoomRequest request)
     {
         var cr = new ClassRoom
@@ -183,7 +183,7 @@ public class ClassesController : ControllerBase
     }
 
     [HttpPost("{id}/subjects")]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<IActionResult> AssignSubject(Guid id, [FromBody] AssignSubjectToClassRequest request)
     {
         if (await _db.ClassSubjects.AnyAsync(cs => cs.ClassRoomId == id && cs.SubjectId == request.SubjectId))
@@ -231,7 +231,7 @@ public class SubjectsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<ActionResult<SubjectDto>> Create([FromBody] CreateSubjectRequest request)
     {
         if (await _db.Subjects.AnyAsync(s => s.Code.ToLower() == request.Code.ToLower()))

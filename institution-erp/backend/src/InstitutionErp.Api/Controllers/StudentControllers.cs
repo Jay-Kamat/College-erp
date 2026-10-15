@@ -19,12 +19,14 @@ public class StudentsController : ControllerBase
     private readonly ApplicationDbContext _db;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IAuditLogService _auditLogService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public StudentsController(ApplicationDbContext db, IPasswordHasher passwordHasher, IAuditLogService auditLogService)
+    public StudentsController(ApplicationDbContext db, IPasswordHasher passwordHasher, IAuditLogService auditLogService, ICurrentUserService currentUserService)
     {
         _db = db;
         _passwordHasher = passwordHasher;
         _auditLogService = auditLogService;
+        _currentUserService = currentUserService;
     }
 
     [HttpGet]
@@ -38,7 +40,6 @@ public class StudentsController : ControllerBase
         var query = _db.Students
             .Include(s => s.User)
             .Include(s => s.ClassRoom)
-            .Include(s => s.StudentParents).ThenInclude(sp => sp.Parent).ThenInclude(p => p.User)
             .AsNoTracking();
 
         if (classId.HasValue)
@@ -84,13 +85,50 @@ public class StudentsController : ControllerBase
                 AdmissionDate = s.AdmissionDate,
                 ClassRoomId = s.ClassRoomId,
                 ClassName = s.ClassRoom.FullName,
-                GuardianName = s.StudentParents.FirstOrDefault() != null ? s.StudentParents.First().Parent.User.FullName : null,
-                GuardianPhone = s.StudentParents.FirstOrDefault() != null ? s.StudentParents.First().Parent.User.PhoneNumber : null,
-                GuardianEmail = s.StudentParents.FirstOrDefault() != null ? s.StudentParents.First().Parent.User.Email : null
+                GuardianName = s.GuardianName,
+                GuardianPhone = s.GuardianPhone,
+                GuardianEmail = s.GuardianEmail
             })
             .ToListAsync();
 
         return Ok(PagedResult<StudentDto>.Create(students, total, page, pageSize));
+    }
+
+    [HttpGet("me")]
+    public async Task<ActionResult<StudentDto>> GetMyProfile()
+    {
+        if (!_currentUserService.UserId.HasValue) return Unauthorized();
+
+        var s = await _db.Students
+            .Include(s => s.User)
+            .Include(s => s.ClassRoom)
+            .FirstOrDefaultAsync(s => s.UserId == _currentUserService.UserId.Value);
+
+        if (s == null) return NotFound("Student profile not found.");
+
+        return Ok(new StudentDto
+        {
+            Id = s.Id,
+            UserId = s.UserId,
+            StudentRegistrationNumber = s.StudentRegistrationNumber,
+            RollNumber = s.RollNumber,
+            FirstName = s.User.FirstName,
+            LastName = s.User.LastName,
+            FullName = s.User.FullName,
+            Email = s.User.Email,
+            PhoneNumber = s.User.PhoneNumber,
+            DateOfBirth = s.DateOfBirth,
+            Gender = s.Gender,
+            BloodGroup = s.BloodGroup,
+            Address = s.Address,
+            Status = s.Status,
+            AdmissionDate = s.AdmissionDate,
+            ClassRoomId = s.ClassRoomId,
+            ClassName = s.ClassRoom.FullName,
+            GuardianName = s.GuardianName,
+            GuardianPhone = s.GuardianPhone,
+            GuardianEmail = s.GuardianEmail
+        });
     }
 
     [HttpGet("{id}")]
@@ -99,7 +137,6 @@ public class StudentsController : ControllerBase
         var s = await _db.Students
             .Include(s => s.User)
             .Include(s => s.ClassRoom)
-            .Include(s => s.StudentParents).ThenInclude(sp => sp.Parent).ThenInclude(p => p.User)
             .FirstOrDefaultAsync(s => s.Id == id);
 
         if (s == null) return NotFound();
@@ -123,14 +160,14 @@ public class StudentsController : ControllerBase
             AdmissionDate = s.AdmissionDate,
             ClassRoomId = s.ClassRoomId,
             ClassName = s.ClassRoom.FullName,
-            GuardianName = s.StudentParents.FirstOrDefault() != null ? s.StudentParents.First().Parent.User.FullName : null,
-            GuardianPhone = s.StudentParents.FirstOrDefault() != null ? s.StudentParents.First().Parent.User.PhoneNumber : null,
-            GuardianEmail = s.StudentParents.FirstOrDefault() != null ? s.StudentParents.First().Parent.User.Email : null
+            GuardianName = s.GuardianName,
+            GuardianPhone = s.GuardianPhone,
+            GuardianEmail = s.GuardianEmail
         });
     }
 
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<ActionResult<StudentDto>> Create([FromBody] CreateStudentRequest request)
     {
         if (await _db.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower()))
@@ -167,7 +204,11 @@ public class StudentsController : ControllerBase
             Address = request.Address,
             ClassRoomId = request.ClassRoomId,
             AdmissionDate = DateTime.SpecifyKind(request.AdmissionDate, DateTimeKind.Utc),
-            Status = StudentStatus.Active
+            Status = StudentStatus.Active,
+            GuardianName = request.GuardianName,
+            GuardianPhone = request.GuardianPhone,
+            GuardianEmail = request.GuardianEmail,
+            GuardianRelation = request.GuardianRelation
         };
         _db.Students.Add(student);
         await _db.SaveChangesAsync();
@@ -191,12 +232,15 @@ public class StudentsController : ControllerBase
             Address = student.Address,
             Status = student.Status,
             AdmissionDate = student.AdmissionDate,
-            ClassRoomId = student.ClassRoomId
+            ClassRoomId = student.ClassRoomId,
+            GuardianName = student.GuardianName,
+            GuardianPhone = student.GuardianPhone,
+            GuardianEmail = student.GuardianEmail
         });
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateStudentRequest request)
     {
         var student = await _db.Students.Include(s => s.User).FirstOrDefaultAsync(s => s.Id == id);
@@ -220,7 +264,7 @@ public class StudentsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var student = await _db.Students.Include(s => s.User).FirstOrDefaultAsync(s => s.Id == id);
@@ -236,7 +280,7 @@ public class StudentsController : ControllerBase
     }
 
     [HttpGet("export")]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<IActionResult> ExportToCsv([FromQuery] Guid? classId)
     {
         var query = _db.Students
@@ -279,58 +323,36 @@ public class ParentsController : ControllerBase
     {
         if (!_currentUserService.UserId.HasValue) return Unauthorized();
 
-        var parent = await _db.Parents.FirstOrDefaultAsync(p => p.UserId == _currentUserService.UserId.Value);
-        if (parent == null)
+        // Returns self if student
+        var student = await _db.Students
+            .Include(s => s.User)
+            .Include(s => s.ClassRoom)
+            .FirstOrDefaultAsync(s => s.UserId == _currentUserService.UserId.Value);
+
+        if (student != null)
         {
-            // If user is student, return self
-            var student = await _db.Students
-                .Include(s => s.User)
-                .Include(s => s.ClassRoom)
-                .FirstOrDefaultAsync(s => s.UserId == _currentUserService.UserId.Value);
-
-            if (student != null)
+            return Ok(new List<StudentDto>
             {
-                return Ok(new List<StudentDto>
+                new()
                 {
-                    new()
-                    {
-                        Id = student.Id,
-                        UserId = student.UserId,
-                        StudentRegistrationNumber = student.StudentRegistrationNumber,
-                        RollNumber = student.RollNumber,
-                        FirstName = student.User.FirstName,
-                        LastName = student.User.LastName,
-                        FullName = student.User.FullName,
-                        Email = student.User.Email,
-                        ClassRoomId = student.ClassRoomId,
-                        ClassName = student.ClassRoom.FullName
-                    }
-                });
-            }
-
-            return Ok(new List<StudentDto>());
+                    Id = student.Id,
+                    UserId = student.UserId,
+                    StudentRegistrationNumber = student.StudentRegistrationNumber,
+                    RollNumber = student.RollNumber,
+                    FirstName = student.User.FirstName,
+                    LastName = student.User.LastName,
+                    FullName = student.User.FullName,
+                    Email = student.User.Email,
+                    PhoneNumber = student.User.PhoneNumber,
+                    ClassRoomId = student.ClassRoomId,
+                    ClassName = student.ClassRoom.FullName,
+                    GuardianName = student.GuardianName,
+                    GuardianPhone = student.GuardianPhone,
+                    GuardianEmail = student.GuardianEmail
+                }
+            });
         }
 
-        var children = await _db.StudentParents
-            .Where(sp => sp.ParentId == parent.Id)
-            .Include(sp => sp.Student).ThenInclude(s => s.User)
-            .Include(sp => sp.Student).ThenInclude(s => s.ClassRoom)
-            .Select(sp => new StudentDto
-            {
-                Id = sp.Student.Id,
-                UserId = sp.Student.UserId,
-                StudentRegistrationNumber = sp.Student.StudentRegistrationNumber,
-                RollNumber = sp.Student.RollNumber,
-                FirstName = sp.Student.User.FirstName,
-                LastName = sp.Student.User.LastName,
-                FullName = sp.Student.User.FullName,
-                Email = sp.Student.User.Email,
-                PhoneNumber = sp.Student.User.PhoneNumber,
-                ClassRoomId = sp.Student.ClassRoomId,
-                ClassName = sp.Student.ClassRoom.FullName
-            })
-            .ToListAsync();
-
-        return Ok(children);
+        return Ok(new List<StudentDto>());
     }
 }

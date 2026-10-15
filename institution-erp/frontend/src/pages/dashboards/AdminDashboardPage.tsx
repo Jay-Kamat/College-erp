@@ -124,7 +124,7 @@ export const AdminDashboardPage: React.FC = () => {
               Principal Executive Dashboard
             </h1>
             <span className="inline-flex items-center rounded-full bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-              SuperAdmin
+              Principal
             </span>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400">

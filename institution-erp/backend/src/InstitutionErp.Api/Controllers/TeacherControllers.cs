@@ -112,7 +112,7 @@ public class TeachersController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<ActionResult<TeacherDto>> Create([FromBody] CreateTeacherRequest request)
     {
         if (await _db.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower()))
@@ -171,7 +171,7 @@ public class TeachersController : ControllerBase
     }
 
     [HttpPost("{id}/allocations")]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<IActionResult> AllocateTeacher(Guid id, [FromBody] AllocateTeacherRequest request)
     {
         // Conflict check: no double allocation of the same subject in the same class to another teacher
@@ -274,7 +274,7 @@ public class TimetableController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<ActionResult<TimetableEntryDto>> Create([FromBody] CreateTimetableEntryRequest request)
     {
         // Clash detection 1: Class double-booked for the same day and period
@@ -324,7 +324,7 @@ public class TimetableController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var entry = await _db.TimetableEntries.FindAsync(id);
@@ -376,7 +376,7 @@ public class TeacherAttendanceController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<IActionResult> Mark([FromBody] MarkTeacherAttendanceRequest request)
     {
         var targetDate = DateTime.SpecifyKind(request.Date.Date, DateTimeKind.Utc);

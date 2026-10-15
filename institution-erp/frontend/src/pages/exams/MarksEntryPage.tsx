@@ -24,7 +24,7 @@ export const MarksEntryPage: React.FC = () => {
   const { user, hasRole } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const isAdmin = hasRole(['SuperAdmin', 'Admin']);
+  const isAdmin = hasRole('Principal');
   const isTeacher = hasRole('Teacher');
 
   const examIdParam = searchParams.get('examId') || '';

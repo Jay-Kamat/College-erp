@@ -256,7 +256,7 @@ public class AdmissionsController : ControllerBase
     }
 
     [HttpGet("export")]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<IActionResult> ExportToCsv([FromQuery] AdmissionStatus? status, [FromQuery] Guid? classId)
     {
         var query = _db.Admissions
@@ -280,7 +280,7 @@ public class AdmissionsController : ControllerBase
     }
 
     [HttpPut("{id}/status")]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateAdmissionStatusRequest request)
     {
         var admission = await _db.Admissions
@@ -293,7 +293,7 @@ public class AdmissionsController : ControllerBase
         admission.Status = request.NewStatus;
         admission.ReviewRemarks = request.Remarks;
         admission.ReviewedAt = DateTime.UtcNow;
-        admission.ReviewedBy = _currentUserService.Email ?? "Admin";
+        admission.ReviewedBy = _currentUserService.Email ?? "Principal";
 
         _db.AdmissionStatusHistories.Add(new AdmissionStatusHistory
         {
@@ -304,7 +304,7 @@ public class AdmissionsController : ControllerBase
             ChangedBy = admission.ReviewedBy
         });
 
-        // If Approved, auto-create Student, Parent, Accounts and notification!
+        // If Approved, auto-create Student Account and notification!
         if (request.NewStatus == AdmissionStatus.Approved && admission.CreatedStudentId == null)
         {
             var year = DateTime.UtcNow.Year;
@@ -341,59 +341,18 @@ public class AdmissionsController : ControllerBase
                 Address = admission.Address,
                 ClassRoomId = admission.DesiredClassRoomId,
                 AdmissionDate = DateTime.UtcNow,
-                Status = StudentStatus.Active
+                Status = StudentStatus.Active,
+                GuardianName = admission.GuardianName,
+                GuardianPhone = admission.GuardianPhone,
+                GuardianEmail = admission.GuardianEmail,
+                GuardianRelation = admission.GuardianRelation
             };
             _db.Students.Add(student);
             await _db.SaveChangesAsync();
 
             admission.CreatedStudentId = student.Id;
 
-            // 3. Parent User and Parent record
-            var parentUser = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == admission.GuardianEmail.ToLower());
-            if (parentUser == null)
-            {
-                parentUser = new User
-                {
-                    Email = admission.GuardianEmail,
-                    FirstName = admission.GuardianName,
-                    LastName = admission.LastName,
-                    PhoneNumber = admission.GuardianPhone,
-                    PasswordHash = _passwordHasher.HashPassword("Welcome@123"),
-                    IsActive = true
-                };
-                var parentRole = await _db.Roles.FirstOrDefaultAsync(r => r.Name == UserRoleType.Parent.ToString());
-                if (parentRole != null)
-                {
-                    parentUser.UserRoles.Add(new UserRole { RoleId = parentRole.Id });
-                }
-                _db.Users.Add(parentUser);
-                await _db.SaveChangesAsync();
-            }
-
-            var parent = await _db.Parents.FirstOrDefaultAsync(p => p.UserId == parentUser.Id);
-            if (parent == null)
-            {
-                parent = new Parent
-                {
-                    UserId = parentUser.Id,
-                    Occupation = "Guardian",
-                    Address = admission.Address,
-                    AlternatePhone = admission.GuardianPhone
-                };
-                _db.Parents.Add(parent);
-                await _db.SaveChangesAsync();
-            }
-
-            // Link Student and Parent
-            _db.StudentParents.Add(new StudentParent
-            {
-                StudentId = student.Id,
-                ParentId = parent.Id,
-                Relationship = admission.GuardianRelation,
-                IsPrimaryContact = true
-            });
-
-            // 4. Auto-assign class fees
+            // 3. Auto-assign class fees
             var feeStructures = await _db.FeeStructures
                 .Include(f => f.Items)
                 .Where(f => f.ClassRoomId == admission.DesiredClassRoomId)
@@ -415,19 +374,12 @@ public class AdmissionsController : ControllerBase
                 }
             }
 
-            // 5. Send credentials notification
+            // 4. Send credentials notification to student
             await _notificationSender.QueueOutboxAsync(
                 NotificationChannelType.Email,
                 admission.Email,
                 "Admission Approved - Your Student Portal Credentials",
                 $"<p>Dear {admission.FirstName},</p><p>Congratulations! Your admission has been approved.</p><p>Student ID: <strong>{regNo}</strong><br/>Username: {admission.Email}<br/>Default Password: <strong>Welcome@123</strong></p><p>Please log in and update your password immediately.</p>"
-            );
-
-            await _notificationSender.QueueOutboxAsync(
-                NotificationChannelType.Email,
-                admission.GuardianEmail,
-                "Student Admission Approved - Parent Portal Access",
-                $"<p>Dear {admission.GuardianName},</p><p>Your child {admission.FullName}'s admission has been approved.</p><p>Parent Portal Username: {admission.GuardianEmail}<br/>Default Password: <strong>Welcome@123</strong></p>"
             );
         }
 
