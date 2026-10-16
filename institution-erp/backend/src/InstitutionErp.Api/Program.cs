@@ -27,7 +27,6 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
-
 // 2. Add Layers
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);

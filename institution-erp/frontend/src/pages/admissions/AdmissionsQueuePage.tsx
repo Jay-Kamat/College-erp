@@ -4,7 +4,7 @@ import { admissionsApi, academicApi } from '../../api/endpoints';
 import { Admission } from '../../types';
 import DataTable from '../../components/ui/DataTable';
 import Modal from '../../components/ui/Modal';
-import { CheckCircle2, XCircle, Clock, FileText, Search, Filter, Eye, Check, X, Download, ExternalLink } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, FileText, Search, Filter, Eye, Check, X, Download, ExternalLink, Trash2, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const AdmissionsQueuePage: React.FC = () => {
@@ -13,6 +13,7 @@ export const AdmissionsQueuePage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedAdmission, setSelectedAdmission] = useState<Admission | null>(null);
+  const [admissionToDelete, setAdmissionToDelete] = useState<Admission | null>(null);
   const [remarks, setRemarks] = useState('');
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -52,6 +53,23 @@ export const AdmissionsQueuePage: React.FC = () => {
     },
     onError: (err: any) => {
       alert(`Status update failed: ${err.response?.data?.detail || err.message}`);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => admissionsApi.delete(id),
+    onSuccess: (_, deletedId) => {
+      queryClient.invalidateQueries({ queryKey: ['admissions-list'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      setActionSuccess('Admission application has been permanently deleted.');
+      setAdmissionToDelete(null);
+      if (selectedAdmission?.id === deletedId) {
+        setSelectedAdmission(null);
+      }
+      setTimeout(() => setActionSuccess(null), 5000);
+    },
+    onError: (err: any) => {
+      alert(`Failed to delete application: ${err.response?.data?.message || err.message}`);
     },
   });
 
@@ -105,13 +123,24 @@ export const AdmissionsQueuePage: React.FC = () => {
     {
       header: 'Actions',
       accessor: (row: Admission) => (
-        <button
-          onClick={() => setSelectedAdmission(row)}
-          className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
-        >
-          <Eye className="h-3.5 w-3.5" />
-          Review
-        </button>
+        <div className="flex items-center justify-end gap-1.5">
+          <button
+            onClick={() => setSelectedAdmission(row)}
+            className="inline-flex items-center gap-1 rounded-md bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition"
+            title="Review application"
+          >
+            <Eye className="h-3.5 w-3.5" />
+            <span>Review</span>
+          </button>
+          <button
+            onClick={() => setAdmissionToDelete(row)}
+            className="inline-flex items-center gap-1 rounded-md bg-rose-50 dark:bg-rose-950/50 px-2.5 py-1 text-xs font-semibold text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900 transition"
+            title="Delete application"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span>Delete</span>
+          </button>
+        </div>
       ),
       className: 'text-right',
     },
@@ -308,58 +337,117 @@ export const AdmissionsQueuePage: React.FC = () => {
             </div>
 
             {/* Decision Buttons */}
-            <div className="flex items-center justify-end gap-2 border-t border-slate-200 pt-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-slate-200 pt-4">
               <button
                 type="button"
-                onClick={() => setSelectedAdmission(null)}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                disabled={deleteMutation.isPending || updateStatusMutation.isPending}
+                onClick={() => setAdmissionToDelete(selectedAdmission)}
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition disabled:opacity-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Delete Application</span>
+              </button>
+
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedAdmission(null)}
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={updateStatusMutation.isPending}
+                  onClick={() =>
+                    updateStatusMutation.mutate({
+                      id: selectedAdmission.id,
+                      newStatus: 'Rejected',
+                      remarks,
+                    })
+                  }
+                  className="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Reject
+                </button>
+                <button
+                  type="button"
+                  disabled={updateStatusMutation.isPending}
+                  onClick={() =>
+                    updateStatusMutation.mutate({
+                      id: selectedAdmission.id,
+                      newStatus: 'Waitlisted',
+                      remarks,
+                    })
+                  }
+                  className="inline-flex items-center gap-1 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+                >
+                  <Clock className="h-3.5 w-3.5" />
+                  Waitlist
+                </button>
+                <button
+                  type="button"
+                  disabled={updateStatusMutation.isPending}
+                  onClick={() =>
+                    updateStatusMutation.mutate({
+                      id: selectedAdmission.id,
+                      newStatus: 'Approved',
+                      remarks,
+                    })
+                  }
+                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  Approve & Enroll Student
+                </button>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {admissionToDelete && (
+        <Modal
+          isOpen={!!admissionToDelete}
+          onClose={() => !deleteMutation.isPending && setAdmissionToDelete(null)}
+          title="Delete Admission Application"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 p-3.5 text-rose-800 dark:text-rose-200">
+              <AlertTriangle className="h-5 w-5 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+              <div className="text-xs">
+                <p className="font-bold">Are you sure you want to delete this application?</p>
+                <p className="mt-1 text-rose-700 dark:text-rose-300 leading-relaxed">
+                  Application <strong className="font-mono">{admissionToDelete.referenceNumber}</strong> for{' '}
+                  <strong>{admissionToDelete.fullName}</strong> will be permanently removed along with all uploaded documents.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 dark:border-slate-800 pt-3">
+              <button
+                type="button"
+                disabled={deleteMutation.isPending}
+                onClick={() => setAdmissionToDelete(null)}
+                className="rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                disabled={updateStatusMutation.isPending}
-                onClick={() =>
-                  updateStatusMutation.mutate({
-                    id: selectedAdmission.id,
-                    newStatus: 'Rejected',
-                    remarks,
-                  })
-                }
-                className="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+                disabled={deleteMutation.isPending}
+                onClick={() => deleteMutation.mutate(admissionToDelete.id)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 transition disabled:opacity-50"
               >
-                <X className="h-3.5 w-3.5" />
-                Reject
-              </button>
-              <button
-                type="button"
-                disabled={updateStatusMutation.isPending}
-                onClick={() =>
-                  updateStatusMutation.mutate({
-                    id: selectedAdmission.id,
-                    newStatus: 'Waitlisted',
-                    remarks,
-                  })
-                }
-                className="inline-flex items-center gap-1 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
-              >
-                <Clock className="h-3.5 w-3.5" />
-                Waitlist
-              </button>
-              <button
-                type="button"
-                disabled={updateStatusMutation.isPending}
-                onClick={() =>
-                  updateStatusMutation.mutate({
-                    id: selectedAdmission.id,
-                    newStatus: 'Approved',
-                    remarks,
-                  })
-                }
-                className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
-              >
-                <Check className="h-3.5 w-3.5" />
-                Approve & Enroll Student
+                {deleteMutation.isPending ? (
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
+                <span>Delete Permanently</span>
               </button>
             </div>
           </div>

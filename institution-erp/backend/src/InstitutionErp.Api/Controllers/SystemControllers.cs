@@ -484,7 +484,7 @@ public class DashboardController : ControllerBase
 
     [HttpGet("student")]
     [HttpGet("parent")]
-    [Authorize(Roles = "Principal,Student")]
+    [Authorize(Roles = "Principal,SuperAdmin,Admin,Teacher,Student,Parent")]
     public async Task<ActionResult<ParentStudentDashboardDto>> GetStudentDashboard([FromQuery] Guid? studentId)
     {
         Student? student = null;
@@ -503,6 +503,14 @@ public class DashboardController : ControllerBase
                 .Include(s => s.ClassRoom)
                 .FirstOrDefaultAsync(s => s.UserId == _currentUserService.UserId);
         }
+        else if (_currentUserService.IsInRole("Parent"))
+        {
+            var userEmail = _currentUserService.Email;
+            student = await _db.Students
+                .Include(s => s.User)
+                .Include(s => s.ClassRoom)
+                .FirstOrDefaultAsync(s => !string.IsNullOrEmpty(userEmail) && s.GuardianEmail != null && s.GuardianEmail.ToLower() == userEmail.ToLower());
+        }
 
         student ??= await _db.Students.Include(s => s.User).Include(s => s.ClassRoom).FirstOrDefaultAsync();
 
@@ -511,7 +519,7 @@ public class DashboardController : ControllerBase
         var attendances = await _db.Attendances.Where(a => a.StudentId == student.Id).ToListAsync();
         var attPct = attendances.Count > 0
             ? Math.Round((decimal)attendances.Count(a => a.Status == AttendanceStatus.Present || a.Status == AttendanceStatus.Late) / attendances.Count * 100, 1)
-            : 95m;
+            : 0m;
 
         var dues = await _db.StudentFees
             .Where(sf => sf.StudentId == student.Id && sf.Status != PaymentStatus.Paid)

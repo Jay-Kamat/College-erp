@@ -166,7 +166,7 @@ public class AdmissionsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "SuperAdmin,Admin")]
+    [Authorize(Roles = "Principal,SuperAdmin,Admin")]
     public async Task<ActionResult<PagedResult<AdmissionDto>>> GetAdmissions(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -387,6 +387,52 @@ public class AdmissionsController : ControllerBase
         await _auditLogService.LogAsync("UpdateAdmissionStatus", "Admission", admission.Id.ToString(), new { oldStatus }, new { newStatus = request.NewStatus });
 
         return Ok(new { message = $"Admission status transitioned to {request.NewStatus}." });
+    }
+
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Principal,SuperAdmin,Admin")]
+    public async Task<IActionResult> DeleteAdmission(Guid id)
+    {
+        var admission = await _db.Admissions
+            .Include(a => a.Documents)
+            .Include(a => a.StatusHistory)
+            .FirstOrDefaultAsync(a => a.Id == id);
+
+        if (admission == null) return NotFound(new { message = "Admission application not found." });
+
+        // Delete associated uploaded physical files
+        foreach (var doc in admission.Documents)
+        {
+            if (!string.IsNullOrEmpty(doc.FilePath))
+            {
+                try
+                {
+                    await _fileStorage.DeleteFileAsync(doc.FilePath);
+                }
+                catch
+                {
+                    // Continue cleanup even if physical file is missing
+                }
+            }
+        }
+
+        var refNumber = admission.ReferenceNumber;
+        var fullName = admission.FullName;
+
+        _db.AdmissionDocuments.RemoveRange(admission.Documents);
+        _db.AdmissionStatusHistories.RemoveRange(admission.StatusHistory);
+        _db.Admissions.Remove(admission);
+        await _db.SaveChangesAsync();
+
+        await _auditLogService.LogAsync(
+            "DeleteAdmission",
+            "Admission",
+            id.ToString(),
+            new { ReferenceNumber = refNumber, FullName = fullName, admission.Email, admission.Status },
+            null
+        );
+
+        return Ok(new { message = $"Admission application {refNumber} ({fullName}) deleted successfully." });
     }
 }
 

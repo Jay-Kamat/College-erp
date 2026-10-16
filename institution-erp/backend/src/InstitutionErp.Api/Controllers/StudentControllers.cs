@@ -323,36 +323,45 @@ public class ParentsController : ControllerBase
     {
         if (!_currentUserService.UserId.HasValue) return Unauthorized();
 
-        // Returns self if student
-        var student = await _db.Students
+        var userEmail = _currentUserService.Email;
+        var query = _db.Students
             .Include(s => s.User)
             .Include(s => s.ClassRoom)
-            .FirstOrDefaultAsync(s => s.UserId == _currentUserService.UserId.Value);
+            .AsNoTracking();
 
-        if (student != null)
+        if (_currentUserService.IsInRole("Parent") && !string.IsNullOrEmpty(userEmail))
         {
-            return Ok(new List<StudentDto>
-            {
-                new()
-                {
-                    Id = student.Id,
-                    UserId = student.UserId,
-                    StudentRegistrationNumber = student.StudentRegistrationNumber,
-                    RollNumber = student.RollNumber,
-                    FirstName = student.User.FirstName,
-                    LastName = student.User.LastName,
-                    FullName = student.User.FullName,
-                    Email = student.User.Email,
-                    PhoneNumber = student.User.PhoneNumber,
-                    ClassRoomId = student.ClassRoomId,
-                    ClassName = student.ClassRoom.FullName,
-                    GuardianName = student.GuardianName,
-                    GuardianPhone = student.GuardianPhone,
-                    GuardianEmail = student.GuardianEmail
-                }
-            });
+            query = query.Where(s => (s.GuardianEmail != null && s.GuardianEmail.ToLower() == userEmail.ToLower()) || s.UserId == _currentUserService.UserId.Value);
+        }
+        else
+        {
+            query = query.Where(s => s.UserId == _currentUserService.UserId.Value);
         }
 
-        return Ok(new List<StudentDto>());
+        var students = await query.Select(student => new StudentDto
+        {
+            Id = student.Id,
+            UserId = student.UserId,
+            StudentRegistrationNumber = student.StudentRegistrationNumber,
+            RollNumber = student.RollNumber,
+            FirstName = student.User.FirstName,
+            LastName = student.User.LastName,
+            FullName = student.User.FullName,
+            Email = student.User.Email,
+            PhoneNumber = student.User.PhoneNumber,
+            DateOfBirth = student.DateOfBirth,
+            Gender = student.Gender,
+            BloodGroup = student.BloodGroup,
+            Address = student.Address,
+            Status = student.Status,
+            AdmissionDate = student.AdmissionDate,
+            ClassRoomId = student.ClassRoomId,
+            ClassName = student.ClassRoom.FullName,
+            GuardianName = student.GuardianName,
+            GuardianPhone = student.GuardianPhone,
+            GuardianEmail = student.GuardianEmail
+        }).ToListAsync();
+
+        return Ok(students);
     }
 }

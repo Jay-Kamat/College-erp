@@ -173,11 +173,17 @@ public class FeesController : ControllerBase
     [HttpGet("student/{studentId}")]
     public async Task<ActionResult<List<StudentFeeDto>>> GetStudentFees(Guid studentId)
     {
-        // RBAC check: Student can only view own fees
+        // RBAC check: Student/Parent can only view own fees
         if (_currentUserService.IsInRole("Student"))
         {
             var isSelf = await _db.Students.AnyAsync(s => s.Id == studentId && s.UserId == _currentUserService.UserId);
             if (!isSelf) return Forbid();
+        }
+        else if (_currentUserService.IsInRole("Parent"))
+        {
+            var userEmail = _currentUserService.Email;
+            var isChild = await _db.Students.AnyAsync(s => s.Id == studentId && !string.IsNullOrEmpty(userEmail) && s.GuardianEmail != null && s.GuardianEmail.ToLower() == userEmail.ToLower());
+            if (!isChild) return Forbid();
         }
 
         var fees = await _db.StudentFees
@@ -317,6 +323,18 @@ public class FeesController : ControllerBase
         if (payment == null || payment.Receipt == null) return NotFound("Payment or receipt record not found.");
 
         var student = payment.StudentFee.Student;
+
+        // RBAC check: Student/Parent can only view own receipts
+        if (_currentUserService.IsInRole("Student"))
+        {
+            if (student.UserId != _currentUserService.UserId) return Forbid();
+        }
+        else if (_currentUserService.IsInRole("Parent"))
+        {
+            var userEmail = _currentUserService.Email;
+            if (string.IsNullOrEmpty(userEmail) || string.IsNullOrEmpty(student.GuardianEmail) || student.GuardianEmail.ToLower() != userEmail.ToLower()) return Forbid();
+        }
+
         var classRoom = student.ClassRoom;
         var item = payment.StudentFee.FeeStructureItem;
 

@@ -348,10 +348,15 @@ public class ResultsController : ControllerBase
 
         if (student == null) return NotFound();
 
-        // RBAC check: Student can only view own results
+        // RBAC check: Student/Parent can only view own results
         if (_currentUserService.IsInRole("Student"))
         {
             if (student.UserId != _currentUserService.UserId) return Forbid();
+        }
+        else if (_currentUserService.IsInRole("Parent"))
+        {
+            var userEmail = _currentUserService.Email;
+            if (string.IsNullOrEmpty(userEmail) || string.IsNullOrEmpty(student.GuardianEmail) || student.GuardianEmail.ToLower() != userEmail.ToLower()) return Forbid();
         }
 
         var exams = await _db.Exams
@@ -459,6 +464,17 @@ public class ResultsController : ControllerBase
             .FirstOrDefaultAsync(s => s.Id == studentId);
 
         if (student == null) return NotFound("Student not found.");
+
+        // RBAC check: Student/Parent can only download own report card
+        if (_currentUserService.IsInRole("Student"))
+        {
+            if (student.UserId != _currentUserService.UserId) return Forbid();
+        }
+        else if (_currentUserService.IsInRole("Parent"))
+        {
+            var userEmail = _currentUserService.Email;
+            if (string.IsNullOrEmpty(userEmail) || string.IsNullOrEmpty(student.GuardianEmail) || student.GuardianEmail.ToLower() != userEmail.ToLower()) return Forbid();
+        }
 
         // Check publishing requirement for students/parents
         if ((_currentUserService.IsInRole("Student") || _currentUserService.IsInRole("Parent")) && !exam.IsPublished)

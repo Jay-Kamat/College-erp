@@ -31,6 +31,7 @@ export const admissionsApi = {
     apiClient.post(`/admissions/${id}/documents`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data),
   updateStatus: (id: string, data: { newStatus: string; remarks?: string }) =>
     apiClient.put(`/admissions/${id}/status`, data).then(r => r.data),
+  delete: (id: string) => apiClient.delete(`/admissions/${id}`).then(r => r.data),
   exportCsv: async (status?: string, classId?: string) => {
     const res = await apiClient.get('/admissions/export', { params: { status, classId }, responseType: 'blob' });
     const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -138,6 +139,34 @@ export const examsApi = {
     document.body.appendChild(link);
     link.click();
     link.remove();
+  },
+  printReportCard: async (examId: string, studentId: string) => {
+    const res = await apiClient.get(`/results/${examId}/report-card/${studentId}`, { responseType: 'blob' });
+    const blob = new Blob([res.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+    iframe.src = url;
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch {
+        window.open(url, '_blank');
+      }
+    }, 600);
+  },
+  openReportCardPdf: async (examId: string, studentId: string) => {
+    const res = await apiClient.get(`/results/${examId}/report-card/${studentId}`, { responseType: 'blob' });
+    const blob = new Blob([res.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    window.open(url, '_blank');
   },
 };
 

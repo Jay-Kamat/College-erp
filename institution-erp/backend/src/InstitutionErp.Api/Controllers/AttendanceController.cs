@@ -205,6 +205,17 @@ public class AttendanceController : ControllerBase
 
         if (student == null) return NotFound();
 
+        // RBAC check: Student/Parent can only view own attendance summary
+        if (_currentUserService.IsInRole("Student"))
+        {
+            if (student.UserId != _currentUserService.UserId) return Forbid();
+        }
+        else if (_currentUserService.IsInRole("Parent"))
+        {
+            var userEmail = _currentUserService.Email;
+            if (string.IsNullOrEmpty(userEmail) || string.IsNullOrEmpty(student.GuardianEmail) || student.GuardianEmail.ToLower() != userEmail.ToLower()) return Forbid();
+        }
+
         var attendances = await _db.Attendances
             .Where(a => a.StudentId == studentId)
             .ToListAsync();
@@ -232,7 +243,7 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpGet("low-attendance")]
-    [Authorize(Roles = "SuperAdmin,Admin,Teacher")]
+    [Authorize(Roles = "Principal,SuperAdmin,Admin,Teacher")]
     public async Task<ActionResult<List<StudentAttendanceSummaryDto>>> GetLowAttendanceStudents([FromQuery] Guid? classId)
     {
         var query = _db.Students
